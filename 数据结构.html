@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<script>
+    function Stack() {
+        var items = [];
+
+        //压栈
+       this.push = function (item) {
+           items.push(item)
+       };
+
+       //弹出栈
+        this.pop = function () {
+            return items.pop();
+        };
+
+        //返回顶部内容
+        this.top = function () {
+            return items[items.length-1];
+        };
+
+        //返回栈的大小
+        this.size = function () {
+            return items.length;
+        };
+
+        this.isEmpty = function () {
+            return items.length == 0;
+        }
+
+        //清空栈
+        this.clear = function () {
+            items = [];
+        };
+
+    }
+    //判断字符串括号是否合法
+    function is_hefa() {
+        var str = "(34(343lk)@@#((dd)ddd)d)()dd";
+        var stac = new Stack();
+        for (var i in str) {
+            //如果遇到左括号，压入栈中
+            if (str[i] == "("){
+                stac.push(str[i]);
+            }
+            //遇到右括号
+            if (str[i] == ")"){
+                //先判断栈是否为空，为空表明缺少对应的左括号，不合法
+                if (stac.isEmpty()){
+                    return alert("不合法");
+                } else {
+                    //不为空就从栈中移除一个左括号
+                    stac.pop();
+                }
+            }
+        }
+        // 最后判断栈是否为空，如果为空说明左右括号对应，合法
+        if (stac.isEmpty()){
+            return alert("合法");
+        } else {
+            return alert("不合法");
+        }
+    }
+    is_hefa();
+
+
+</script>
+
+
+</body>
+</html>

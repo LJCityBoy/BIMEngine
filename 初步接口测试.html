@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- 满屏，禁止缩放 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>title</title>
+
+    <script type="text/javascript" src="libs/three.js"></script>
+    <script type="text/javascript" src="libs/OrbitControls.js"></script>
+    <script type="text/javascript" src="libs/Utility.js"></script>
+    <script type="text/javascript" src="libs/BIMEngine.js"></script>
+    <style>
+        body{
+            margin: 0px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<script>
+
+    //
+    var scene,renderer,camera,light,controls;
+    var auxiliary;//辅助坐标系
+    var raycaster,mouse ;//光线投射器、鼠标点击时的二维向量
+    var projectiveObj;//定义上次投射到的对象
+
+
+    //程序入口
+    draw();
+
+    /**
+     * 初始化场景
+     */
+    function init() {
+        //scene 场景
+        scene = new THREE.Scene();
+        //相机
+        camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,1,1000*100);
+        camera.position.set(0,0,1500);
+
+        //渲染器
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setClearColor(0xf6f6f6);//设置背景颜色
+        renderer.setSize(window.innerWidth,window.innerHeight);
+        document.body.appendChild(renderer.domElement);//加到控制器中
+
+        //添加光源
+        scene.add(new THREE.AmbientLight(0xffffff));
+
+        //添加平行光，平行光可以看做太阳光
+        light = new THREE.DirectionalLight(0x00ff00);
+        light.position.set(-100, 0, 1000);
+        // scene.add(light);
+
+        //辅助坐标系
+        //轴辅助 （每一个轴的长度）
+        auxiliary = new THREE.AxesHelper(100);
+        auxiliary.z = -100;
+        scene.add(auxiliary);
+    }
+
+    /**
+     * 鼠标控制
+     */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        // 如果使用animate方法时，将此函数删除
+        //controls.addEventListener( 'change', render );
+        // 使动画循环使用时阻尼或自转 意思是否有惯性
+        controls.enableDamping = false;
+        //动态阻尼系数 就是鼠标拖拽旋转灵敏度
+        controls.dampingFactor = 0.25;
+        //是否可以缩放
+        controls.enableZoom = true;
+        //是否自动旋转
+        controls.autoRotate = false;
+        //设置相机距离原点的最远距离
+        controls.minDistance = 20;
+        //设置相机距离原点的最远距离
+        controls.maxDistance = 10000;
+        //是否开启右键拖拽
+        controls.enablePan = true;
+
+    }
+    /**
+     * 适应窗口变化
+     */
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /**
+     * 动画
+     */
+    function animate() {
+        //更新控制器
+        controls.update();
+        renderer.render(scene,camera);
+        requestAnimationFrame(animate);
+    }
+
+    //开始函数
+    function draw() {
+        init();//初始化
+        initObj();//画模型
+        initControls();//控制器初始化
+        animate();//动画
+        window.onresize = onWindowResize;//根据窗口变化
+    }
+
+
+    /**
+     * 画模型
+     */
+    function initObj() {
+        var bimDray = new THREE.BIMEngine();
+        /**
+         * 绘制长方体基础
+         * @param sn 图形编号
+         * @param name 名称
+         * @param center_stake_N 中心桩号N坐标(X，数学坐标系对应Y方向)
+         * @param center_stake_E 中心桩号E坐标(Y，数学坐标系对应X方向)
+         * @param center_stake_H 中心桩号高程（即 Z坐标）
+         * @param azimuth 中心桩号切线方位角
+         * @param distance 道路中心桩到基础中心之间的距离
+         * @param angle 直线与切线方向夹角，左侧为负，右侧为正
+         * @param bottom_elevation 底面中心点高程(Z值)
+         * @param cuboid_parameter_list 长方体参数列表，采用json格式，可绘制多层
+         */
+      var obj = bimDray.draw_cuboid_foundation(1,"test1",0,0,0,0,100,90,10,{
+          "cuboid":[
+                {
+                    "length":100,
+                    "width":50,
+                    "height":30
+                },
+                {
+                    "length":80,
+                    "width":40,
+                    "height":20
+                },
+                {
+                    "length":60,
+                    "width":20,
+                    "height":10
+                }
+            ]});
+
+      // scene.add(obj);
+
+        /**
+         * 功能：绘制圆柱体桩基
+         * @param sn 图形编号
+         * @param name 名称
+         * @param center_stake_N 中心桩号N坐标(X，数学坐标系对应Y方向)
+         * @param center_stake_E 中心桩号E坐标(Y，数学坐标系对应X方向)
+         * @param center_stake_H 中心桩号高程（即 Z坐标）
+         * @param azimuth 中心桩号切线方位角
+         * @param distance1 道路中心桩与桩基中心之间的距离
+         * @param angle1 直线与切线方向夹角，左侧为负，右侧为正
+         * @param distance2 距离2
+         * @param angle2 第二段直线与第一段直线间夹角
+         * @param bottom_elevation 底面中心点高程(Z值)
+         * @param diameter 桩直径
+         * @param height 高度
+         */
+      var cyl1 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI * 0.25,190,-90,0,0,-90,30,200);
+      // scene.add(cyl1);
+      var cyl2 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI * 0.25,190,90,0,0,-90,30,200);
+      // scene.add(cyl2);
+      var cyl3 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI * 0.25,470,90,0,0,-90,30,200);
+      // scene.add(cyl3);
+      var cyl4 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI * 0.25,470,-90,0,0,-90,30,200);
+      // scene.add(cyl4);
+
+
+
+        /**
+         * 功能：绘制组合体承台
+         * @param sn 图形编号
+         * @param name 名称
+         * @param center_stake_N 中心桩号N坐标(X，数学坐标系对应Y方向)
+         * @param center_stake_E 中心桩号E坐标(Y，数学坐标系对应X方向)
+         * @param center_stake_H 中心桩号高程（即 Z坐标）
+         * @param azimuth 中心桩号切线方位角
+         * @param distance 道路中心桩到基础中心之间的距离
+         * @param angle 直线与切线方向夹角，左侧为负，右侧为正
+         * @param cap_parameter_list 长方体参数列表，采用json格式，可绘制组合体
+         */
+      //画哑铃承台
+      var obj3 = bimDray.draw_combine_cap(3,"name",0,0,0,Math.PI * 0.25,150,-90,{
+          "cuboid":[
+            {
+                "length":80,
+                "width":50,
+                "height":30,
+                "bottom_elevation":20
+            },
+              {
+                  "length":200,
+                  "width":20,
+                  "height":30,
+                  "bottom_elevation":20
+              },
+              {
+                  "length":80,
+                  "width":50,
+                  "height":30,
+                  "bottom_elevation":20
+              }
+              ]
+      });
+      // scene.add(obj3);
+
+        var obj4 = bimDray.draw_combine_cap(3,"name",0,0,0,Math.PI * 0.25,150,90,{
+            "cuboid":[
+                {
+                    "length":80,
+                    "width":50,
+                    "height":30,
+                    "bottom_elevation":20
+                },
+                {
+                    "length":200,
+                    "width":20,
+                    "height":30,
+                    "bottom_elevation":20
+                },
+                {
+
+                    "length":80,
+                    "width":50,
+                    "height":30,
+                    "bottom_elevation":20
+                }
+            ]
+        });
+        // scene.add(obj4);
+
+
+        //花瓶墩测试
+        /**
+         * 花瓶墩测试
+         * 参数说明：
+         sn-图形编号
+         name-名称
+         center_stake_N-中心桩号N坐标(X，数学坐标系对应Y方向)
+         center_stake_E-中心桩号E坐标(Y，数学坐标系对应X方向)
+         center_stake_H-中心桩号高程（即 Z坐标）
+         azimuth-中心桩号切线方位角
+         distance-道路中心桩到基础中心之间的距离
+         angle-直线与切线方向夹角，左侧为负，右侧为正
+         vase_pier_parameter_list –花瓶墩参数列表，采用json格式，可绘制组合体
+         {
+         "cuboid":[
+         {
+         "postion":"bottom"
+         "length":长度
+         "width":宽度
+         "height":高度
+        "bottom_elevation":底面中心点高程(Z值)
+         },
+         {
+         "postion":"top"
+         "length":长度
+         "width":宽度
+         "height":高度
+         "top_elevation":顶面中心点高程(Z值)
+         }
+         ]
+         "varysection":{
+               “interpolation”:”ARC”(“LINE”) 插值方法：线性或者非线性
+               “varydirection”:”LeftAndRight”(“Left” 、”Right”、” FrontAndBack” 、”All”) //要插值得位置
+               “R”:300 半径
+        }
+         }
+         */
+
+        var huaObj = bimDray.draw_vase_pier(4,"ddd",0,0,0,Math.PI*0.5,100,0,{
+            "cuboid":[
+                {
+                    "postion":"bottom",
+                    "length":60,
+                    "width":30,
+                    "height":160,
+                    "bottom_elevation":10
+                },
+                {
+                    "postion":"top",
+                    "length":120,
+                    "width":30,
+                    "height":40,
+                    "top_elevation":270
+                }
+            ],
+            "varysection":{
+                "interpolation":"ARC",
+                "varydirection":"LeftAndRight",
+                "R":100
+            }
+        });
+        // scene.add(huaObj);
+
+
+        /**
+         * 创建扫描网格模型
+         */
+        var shape = new THREE.Shape();
+        /**四条直线绘制一个矩形轮廓*/
+        shape.moveTo(0,0);//起点
+        shape.lineTo(0,10);//第2点
+        shape.lineTo(10,10);//第3点
+        shape.lineTo(10,0);//第4点
+        shape.lineTo(0,0);//第5点
+        /**创建轮廓的扫描轨迹(3D样条曲线)*/
+        var curves = new THREE.SplineCurve3([
+            new THREE.Vector3(0,0,0),
+            new THREE.Vector3(10,0,0),
+            new THREE.Vector3(20,0,0),
+            new THREE.Vector3(40,0,0),
+            new THREE.Vector3(50,10,0)
+        ]);
+        var geometry = new THREE.ExtrudeGeometry(//拉伸造型
+            shape,//二维轮廓
+            //拉伸参数
+            {
+                bevelEnabled:false,//无倒角
+                extrudePath:curves,//选择扫描轨迹
+                steps:20//扫描方向细分数
+            }
+        );
+        var material=new THREE.MeshPhongMaterial({color:0x0000ff,wireframe:false});//材质对象
+        var mesh=new THREE.Mesh(geometry,material);//扫描网格模型对象
+        mesh.name = "fff";
+        // scene.add(mesh);//扫描网格模型添加到场景中
+
+
+
+
+        /**
+         * 绘制长方体或组合体
+         */
+        var combination1 = bimDray.draw_cuboid_entity(10,"不知道",0,0,0,0,{
+            "cuboid":[
+            {
+                "sn":1,
+                "distance":90,
+                "angle":90,
+                "length":100,
+                "width":80,
+                "height":40,
+                "bottom_elevation":20
+            },{
+                    "sn":2,
+                    "distance":110,
+                    "angle":90,
+                    "length":60,
+                    "width":30,
+                    "height":20,
+                    "bottom_elevation":60
+                },
+                {
+                    "sn":3,
+                    "distance":70,
+                    "angle":90,
+                    "length":60,
+                    "width":30,
+                    "height":20,
+                    "bottom_elevation":60
+                },
+                {
+                    "sn":4,
+                    "distance":90,
+                    "angle":90,
+                    "length":40,
+                    "width":100,
+                    "height":40,
+                    "bottom_elevation":80
+                }
+    ]
+        });
+        // console.log(combination1);
+        // scene.add(combination1);
+
+
+        /**
+         * 绘制圆柱体或组合体
+         */
+
+        var cy = bimDray.draw_cylinder_entity(1,"cyl",0,0,0,0,{
+            "cylinder":[
+                {
+                    "sn":1,
+                    "distance":-100,
+                    "angle":90,
+                    "diameter":60,
+                    "height":30,
+                    "bottom_elevation":0
+                },
+                {
+                    "sn":2,
+                    "distance":-110,
+                    "angle":90,
+                    "diameter":20,
+                    "height":15,
+                    "bottom_elevation":30
+                },
+                {
+                    "sn":3,
+                    "distance":-100,
+                    "angle":90,
+                    "diameter":40,
+                    "height":35,
+                    "bottom_elevation":45
+                }
+            ]
+        });
+        // scene.add(cy);
+
+
+
+        //测试带镂空的
+        var dd = bimDray.draw_section_entity(1,"name",0,0,0,0,{
+            "sections":[
+                {
+                    "sn":1,
+                    "distance":10,
+                    "angle":90,
+                    "out_section_parameter":[
+                        ["line",0,0],
+                        ["arc","1:0",20],
+                        ["arc","8:5",5],
+                        ["arc","2:5",5],
+                        ["line","0:1",20],
+                        ["line","-1:0",-30],
+                        ["line","0:-1",-30]
+                    ],
+                    "innersections":[
+                        {
+                            "inner_section_parameter": [
+                                ["line",10,10],
+                                ["line","0:1",5],
+                                ["line","1:0",10],
+                                ["line","0:-1",-5],
+                                ["line","-1:0",-10]
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "sn":1,
+                    "distance":10,
+                    "angle":90,
+                    "out_section_parameter":[
+                        ["line",0,50],
+                        ["arc","1:0",20],
+                        ["arc","8:5",5],
+                        ["arc","2:5",5],
+                        ["line","0:1",20],
+                        ["line","-1:0",-30],
+                        ["line","0:-1",-30]
+                    ],
+                    "innersections":[
+                        {
+                            "inner_section_parameter": [
+                                ["line",10,60],
+                                ["line","0:1",5],
+                                ["line","1:0",10],
+                                ["line","0:-1",-5],
+                                ["line","-1:0",-10]
+                            ]
+
+                        },{
+                            "inner_section_parameter": [
+                                ["line",20,60],
+                                ["line","0:1",5],
+                                ["line","1:0",10],
+                                ["line","0:1",-5],
+                                ["line","1:0",-10]
+                            ]
+                        }
+                    ]
+                }
+
+            ]
+        });
+
+        scene.add(dd);
+
+
+        /**
+         * 画管道
+         */
+        var tube = bimDray.draw_tube(12,"管道",0,0,0,0,100,90,10,{
+            "trackpoints" :[
+                [0,0,0],
+                [0,0,45],
+                [0,18,100],
+                [0,39,140],
+                [10,60,200]
+            ],
+            "radius":10
+        });
+
+        scene.add(tube);
+
+        /**
+         * 画圆环
+         */
+        var torus = bimDray.draw_torus(13,"圆环",0,0,0,0,70,30,-40,{
+            "radius":60,
+            "tube_radius":10,
+            "start_angle":0,
+            "end_angle":Math.PI * 0.5
+        });
+
+        scene.add(torus);
+
+
+        /**
+         * 带倒角的长方体
+         */
+        var ddf = bimDray.draw_single_cuboid_entity(1,"name",0,0,0,0,{
+            "cuboid":
+                {
+                    "sn":1,
+                    "name":"XXX承台",
+                    "distance":100,
+                    "angle":150,
+                    "length":50,
+                    "width":40,
+                    "height":100,
+                    "dx":null,
+                    "dy":null,
+                    "arcR":5,
+                    "bottom_elevation":60
+                }
+        });
+        scene.add(ddf);
+
+        var cubo = bimDray.draw_horizontal_cuboid_combine_entity(1,"name",0,0,0,0,{"cuboid":[
+            {
+                "sn":1,
+                "distance":10,
+                "angle":90,
+                "length":50,
+                "width":30,
+                "height":10,
+                "dx":null,
+                "dy":null,
+                "arcR":null,
+                "bottom_elevation":0
+            },
+                {
+                    "sn":1,
+                    "distance":50,
+                    "angle":90,
+                    "length":70,
+                    "width":20,
+                    "height":10,
+                    "dx":null,
+                    "dy":null,
+                    "arcR":null,
+                    "bottom_elevation":0
+                },
+                {
+                    "sn":1,
+                    "distance":70,
+                    "angle":90,
+                    "length":50,
+                    "width":30,
+                    "height":10,
+                    "dx":null,
+                    "dy":null,
+                    "arcR":null,
+                    "bottom_elevation":0
+                }
+            ]
+        });
+        scene.add(cubo);
+
+        /**
+         * 3	纵向长方体组合（Z轴）
+         */
+        var gfgf = bimDray.draw_vertical_cuboid_combine_entity(1,"名",0,0,0,0,{
+            "cuboid":[
+                {
+                    "sn":1,
+                    "name":"jjj",
+                    "distance":100,
+                    "angle":90,
+                    "length":60,
+                    "width":50,
+                    "height":30,
+                    "dx":null,
+                    "dy":null,
+                    "arcR":null,
+                    "bottom_elevation":10,
+                },{
+                    "sn":2,
+                    "name":"jjj2",
+                    "distance":90,
+                    "angle":90,
+                    "length":50,
+                    "width":40,
+                    "height":30,
+                    "dx":null,
+                    "dy":null,
+                    "arcR":null,
+                    "bottom_elevation":30,
+
+                }
+                ]
+        });
+        scene.add(gfgf);
+
+        // addEventListener('click',ray);// 监听窗口鼠标单击事件
+
+    }
+
+
+
+    function ray() {
+        var Sx = event.clientX;//鼠标单击位置横坐标
+        var Sy = event.clientY;//鼠标单击位置纵坐标
+        //屏幕坐标转标准设备坐标
+        var x = ( Sx / window.innerWidth ) * 2 - 1;//标准设备横坐标
+        var y = -( Sy / window.innerHeight ) * 2 + 1;//标准设备纵坐标
+        var standardVector  = new THREE.Vector3(x, y, 0.5);//标准设备坐标
+        //标准设备坐标转世界坐标
+        var worldVector = standardVector.unproject(camera);
+        //射线投射方向单位向量(worldVector坐标减相机位置坐标)
+        var ray = worldVector.sub(camera.position).normalize();
+        //创建射线投射器对象
+        var raycaster = new THREE.Raycaster(camera.position, ray);
+        //返回射线选中的对象
+        var intersects = raycaster.intersectObjects(scene.children);
+        console.log(intersects);
+
+        if (intersects.length > 0) {
+            console.log(intersects[0].object.material.opacity);
+            intersects[0].object.material.transparent = true;
+            intersects[0].object.material.opacity = 0.6 ;
+            if (intersects[0].object.name == "fff"){
+                alert("选中了");
+            }
+        }
+    }
+
+</script>
+
+</body>
+</html>

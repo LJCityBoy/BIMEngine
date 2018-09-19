@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>创建threejs场景-旋转的立方体</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body{margin: 0}
+        canvas{width: 100% ; height: 100%}
+        div#drawArea{
+            position: fixed;
+        }
+    </style>
+</head>
+<body>
+
+<div id="drawArea"></div>
+
+<script type="text/javascript" src="libs/three.js"></script>
+<script type="text/javascript" src="libs/OrbitControls.js"></script>
+<script type="text/javascript" src="libs/Utility.js"></script>
+<script type="text/javascript" src="libs/BIMEngine.js"></script>
+
+<script>
+
+    var scene,camera,renderer,light,controls;//场景，相机，渲染器，光源
+    var raycaster,mouse;//光投射器，鼠标位置对应的二维向量
+
+    init();
+
+    function init() {
+
+        var container = document.getElementById("drawArea");
+
+        /*
+            1、初始化渲染器
+        */
+        renderer = new THREE.WebGLRenderer();
+        // renderer.setClearColor('white');//设置渲染出来的背景色
+        renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize(window.innerWidth,window.innerHeight);
+        container.appendChild(renderer.domElement);
+
+        /*
+            2、初始化相机
+                创建相机【远景相机，与人眼观察类似，近大远小】
+                param1:视角【视角越大  物体渲染到屏幕时则看着越小，反之越大】
+                param2:相机拍摄面的长宽比
+                param3:近裁剪面
+                param4:远裁剪面
+        */
+        camera = new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,2000);
+        camera.position.set(10,10,800);
+
+        /*
+            添加视图控制器
+        */
+        controls = new THREE.OrbitControls( camera, renderer.domElement );
+        controls.addEventListener( 'change', render );
+
+        /*
+            3、初始化场景
+        */
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+
+
+        //initLight();
+        //scene.add( new THREE.PointLightHelper( light, 15 ) );
+
+        /*
+            4、添加辅助坐标轴
+        */
+        var axes = new THREE.AxisHelper(800);
+        scene.add(axes);
+
+        /*
+            5、添加地面网格
+        */
+        /**
+         * size 网格总边长
+         * step 网格个数
+         * colorCenterLine  网格中心线颜色
+         * colorGrid    网格其他线颜色
+         */
+        var gridHelper = new THREE.GridHelper( 300, 10, 'red', 'gray' );
+        gridHelper.position.y = -100;
+        gridHelper.position.x = 0;
+        scene.add( gridHelper );
+
+        /*
+            6、添加正方体
+        */
+        var geometry = new THREE.BoxGeometry(20,20,20);//盒子模型
+
+        for ( var i = 0; i < 100; i ++ ) {
+            var material = new THREE.MeshBasicMaterial({color:"gray"});//材料
+            var mesh = new THREE.Mesh( geometry, material );
+            mesh.position.x = ( Math.random() - 0.5 ) * 1000;
+            mesh.position.y = ( Math.random() - 0.5 ) * 1000;
+            mesh.position.z = ( Math.random() - 0.5 ) * 1000;
+            scene.add( mesh );
+        }
+
+
+        /*
+            7、添加光投射器 及 鼠标二维向量 用于捕获鼠标移入物体
+
+                下次渲染时，通过mouse对于的二维向量判断是否经过指定物体
+        */
+        raycaster = new THREE.Raycaster();//光线投射器
+        mouse = new THREE.Vector2();//二维向量
+        document.addEventListener('mousemove', function(){
+            event.preventDefault();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        }, false);
+
+
+        /**
+         * 浏览器窗口大小调整
+         */
+        window.addEventListener( 'resize', function(){
+
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize( window.innerWidth, window.innerHeight );
+
+        }, false );
+
+        /**
+         * 添加鼠标点击事件，捕获点击时当前选中的物体
+         */
+        window.addEventListener( 'click', function(){
+
+            if(projectiveObj){
+                console.log(projectiveObj);
+                if(projectiveObj.hasChecked){
+                    projectiveObj.hasChecked = false;
+                    projectiveObj.material.color.set("gray");
+                }else{
+                    projectiveObj.hasChecked = true;
+                    projectiveObj.material.color.set("#dd830d");
+                }
+            }
+
+        }, false );
+
+        render();
+    }
+
+
+    function render() {
+
+        requestAnimationFrame(render);
+
+        renderRaycasterObj(raycaster,scene,camera,mouse);//渲染光投射器投射到的对象
+
+        renderer.render( scene, camera);
+
+    }
+
+    var projectiveObj;//定义上次投射到的对象
+    /**
+     * 根据光投射器判断鼠标所在向量方向是否穿过物体，穿过则改变物体材质
+     * @param {*} raycaster 光投射器
+     * @param {*} scene     场景
+     * @param {*} camera    相机
+     * @param {*} mouse     鼠标位置对应的二维向量
+     */
+    function renderRaycasterObj(raycaster,scene,camera,mouse) {
+        raycaster.setFromCamera(mouse, camera);
+        var intersects = raycaster.intersectObjects(scene.children);
+        if (intersects.length > 0) {
+            var currentProjectiveObjT = intersects[0].object;
+            if (projectiveObj != currentProjectiveObjT) {
+
+                if((currentProjectiveObjT instanceof THREE.AxisHelper) || (currentProjectiveObjT instanceof THREE.GridHelper)){
+                    //穿过的是坐标轴线和网格线
+                    return;
+                }
+
+                // projectiveObj.material.color.setHex(projectiveObj.currentHex);
+                projectiveObj = intersects[0].object;
+            }
+        } else {
+            projectiveObj = null;
+        }
+    }
+</script>
+</body>
+</html>

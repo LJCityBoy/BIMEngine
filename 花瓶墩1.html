@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- 满屏，禁止缩放 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>花瓶墩1</title>
+    <script type="text/javascript" src="libs/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="libs/three.js"></script>
+    <script type="text/javascript" src="libs/OrbitControls.js"></script>
+
+    <style>
+        body{
+            margin: 0px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+
+<script>
+
+    //
+    var scene,renderer,camera,light,controls;
+    var auxiliary;//辅助坐标系
+
+    //程序入口
+    draw();
+
+    /**
+     * 初始化场景
+     */
+    function init() {
+        //scene 场景
+        scene = new THREE.Scene();
+        //相机
+        camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,1,1000*10);
+        camera.position.set(0,0,150);
+
+        //渲染器
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setClearColor(0xf6f6f6);//设置背景颜色
+        renderer.setSize(window.innerWidth,window.innerHeight);
+        document.body.appendChild(renderer.domElement);//加到控制器中
+
+        //添加光源
+        scene.add(new THREE.AmbientLight(0xffffff));
+
+        //添加平行光，平行光可以看做太阳光
+        light = new THREE.DirectionalLight(0xffffff);
+        light.position.set(1, 1, 1);
+        // scene.add(light);
+
+        //辅助坐标系
+        //轴辅助 （每一个轴的长度）
+        auxiliary = new THREE.AxesHelper(100);
+        auxiliary.z = -100;
+        scene.add(auxiliary);
+    }
+
+    /**
+     * 鼠标控制
+     */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        // 如果使用animate方法时，将此函数删除
+        //controls.addEventListener( 'change', render );
+        // 使动画循环使用时阻尼或自转 意思是否有惯性
+        controls.enableDamping = true;
+        //动态阻尼系数 就是鼠标拖拽旋转灵敏度
+        // controls.dampingFactor = 0.25;
+        //是否可以缩放
+        controls.enableZoom = true;
+        //是否自动旋转
+        controls.autoRotate = false;
+        //设置相机距离原点的最远距离
+        controls.minDistance = 20;
+        //设置相机距离原点的最远距离
+        controls.maxDistance = 10000;
+        //是否开启右键拖拽
+        controls.enablePan = true;
+    }
+    /**
+     * 适应窗口变化
+     */
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /**
+     * 动画
+     */
+    function animate() {
+        //更新控制器
+        controls.update();
+        renderer.render(scene,camera);
+        requestAnimationFrame(animate);
+
+    }
+
+    //开始函数
+    function draw() {
+        init();//初始化
+        initObj();//画模型
+        initControls();//控制器初始化
+        animate();//动画
+        window.onresize = onWindowResize;//根据窗口变化
+    }
+
+
+    /**
+     * 画模型
+     */
+    function initObj() {
+
+        var box = new THREE.BoxGeometry(20,40,30,1,1,1);
+        box.vertices.forEach(function (item) {
+           if (item.z < 0){
+               item.z = 0.5*item.x - 20;
+           }else {
+               item.z = -0.5*item.x + 20;
+           }
+           if (item.y < 0){
+               item.y = 0.5*item.x -15;
+           } else {
+               item.y = -0.5*item.x +15;
+           }
+        });
+        var geo = new THREE.MeshLambertMaterial({
+            color:0xd0d0d0,
+            side:THREE.DoubleSide,
+            wireframe:false
+        });
+        var geo2 = new THREE.MeshLambertMaterial({
+            color:0xf0f0f0,
+            side:THREE.DoubleSide,
+            wireframe:false
+        });
+        var mesh = new THREE.Mesh(box,geo);
+        scene.add(mesh);
+        var eh = new THREE.EdgesHelper(mesh,0xffff00);
+        eh.position.copy(mesh.position);
+        scene.add(eh);
+
+        var box2 = new THREE.BoxGeometry(6,55,55);
+        var mesh2 = new THREE.Mesh(box2,geo);
+        mesh2.position.x -= 13;
+        scene.add(mesh2);
+
+        var box3 = new THREE.BoxGeometry(60,20,30);
+        var mesh3 = new THREE.Mesh(box3,geo);
+        mesh3.position.x += 60/2 + 10;
+        scene.add(mesh3);
+        var eh3 = new THREE.EdgesHelper(mesh3,0xff0000);
+        eh3.position.copy(mesh3.position);
+        scene.add(eh3);
+
+    }
+
+
+</script>
+
+
+</body>
+</html>

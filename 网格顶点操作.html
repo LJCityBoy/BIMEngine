@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- 满屏，禁止缩放 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>顶点操作</title>
+    <script type="text/javascript" src="libs/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="libs/three.js"></script>
+    <script type="text/javascript" src="libs/OrbitControls.js"></script>
+    <script type="text/javascript" src="libs/BIMDraw.js"></script>
+
+    <style>
+        body{
+            margin: 0px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div class="layui-layer layer-anim layui-layer-dialog layui-layer-rim" id="layui-layer41" type="dialog" times="41" showtime="0" contype="string" style="z-index: 19891055; width: 400px; top: 200px; left: 532.5px;"><div class="layui-layer-title" style="cursor: move;" move="ok">系统提示</div><div id="" class="layui-layer-content" style="height: 95.0312px;"><p>彩票种类 ： 分分彩</p><p>下注期号 ： 第 201809080942 期</p><p>下注注数 ： 1 ( 注 )</p><p>下注总额 ： 0.1 ( 元 )</p></div><span class="layui-layer-setwin"><a class="layui-layer-ico layui-layer-close layui-layer-close1" href="javascript:;"></a></span><div class="layui-layer-btn"><a class="layui-layer-btn0">确定</a><a class="layui-layer-btn1">取消</a></div></div>
+
+
+<script>
+
+    //
+    var scene,renderer,camera,light,controls;
+    var auxiliary;//辅助坐标系
+
+    //程序入口
+    draw();
+
+    /**
+     * 初始化场景
+     */
+    function init() {
+        //scene 场景
+        scene = new THREE.Scene();
+        //相机
+        camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,1,1000*10);
+        camera.position.set(0,0,150);
+
+        //渲染器
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setClearColor(0xf6f6f6);//设置背景颜色
+        renderer.setSize(window.innerWidth,window.innerHeight);
+        document.body.appendChild(renderer.domElement);//加到控制器中
+
+        //添加光源
+        scene.add(new THREE.AmbientLight(0xffffff));
+
+        //添加平行光，平行光可以看做太阳光
+        light = new THREE.DirectionalLight(0xffffff);
+        light.position.set(1, 1, 1);
+        // scene.add(light);
+
+        //辅助坐标系
+        //轴辅助 （每一个轴的长度）
+        auxiliary = new THREE.AxesHelper(100);
+        auxiliary.z = -100;
+        scene.add(auxiliary);
+    }
+
+    /**
+     * 鼠标控制
+     */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        // 如果使用animate方法时，将此函数删除
+        //controls.addEventListener( 'change', render );
+        // 使动画循环使用时阻尼或自转 意思是否有惯性
+        controls.enableDamping = true;
+        //动态阻尼系数 就是鼠标拖拽旋转灵敏度
+        controls.dampingFactor = 0.25;
+        //是否可以缩放
+        controls.enableZoom = true;
+        //是否自动旋转
+        controls.autoRotate = false;
+        //设置相机距离原点的最远距离
+        controls.minDistance = 20;
+        //设置相机距离原点的最远距离
+        controls.maxDistance = 10000;
+        //是否开启右键拖拽
+        controls.enablePan = true;
+    }
+    /**
+     * 适应窗口变化
+     */
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /**
+     * 动画
+     */
+    function animate() {
+        //更新控制器
+        controls.update();
+        renderer.render(scene,camera);
+        requestAnimationFrame(animate);
+    }
+
+    //开始函数
+    function draw() {
+        init();//初始化
+        initObj();//画模型
+        initControls();//控制器初始化
+        animate();//动画
+        window.onresize = onWindowResize;//根据窗口变化
+    }
+
+
+    /**
+     * 画模型
+     */
+    function initObj() {
+
+        //创建绘图对象
+        var myd = new THREE.BIMDraw();
+
+        //绘制正方体
+        var box = myd.DrawBox(20, 20, 20, 10, 10, 10);
+        box.material.color = new THREE.Color(0xff0000);
+
+
+        //绘制圆柱
+        var cyl = myd.DrawCylinder(10, 10, 30, -20, 15, 0);
+        cyl.material.color = new THREE.Color(0xc7ff00);
+        cyl.material.wireframe = true;
+
+        //绘制圆台体
+        var cyl2 = myd.DrawCylinder(10, 15, 26, 10, -13, 10);
+
+
+        //创建不规则模型
+        var points = [
+            [new THREE.Vector2(0, 0),
+                new THREE.Vector2(0, -10),
+                new THREE.Vector2(30, -10),
+                new THREE.Vector2(50, -25),
+                new THREE.Vector2(50, -90),
+                new THREE.Vector2(175, -90),
+                new THREE.Vector2(175, -25),
+                new THREE.Vector2(195, -10),
+                new THREE.Vector2(225, -10),
+                new THREE.Vector2(225, 0)],
+            [new THREE.Vector2(-250, 0),
+                new THREE.Vector2(-250, -10),
+                new THREE.Vector2(-220, -10),
+                new THREE.Vector2(-200, -25),
+                new THREE.Vector2(-200, -90),
+                new THREE.Vector2(-75, -90),
+                new THREE.Vector2(-75, -25),
+                new THREE.Vector2(-55, -10),
+                new THREE.Vector2(-25, -10),
+                new THREE.Vector2(-25, 0)]
+        ];
+        var shape = myd.DrawByTopPoints(points, 100, 0, 80);
+
+        //不规则模型镂空
+        var holesPoints = [{
+            topPoint: [
+                new THREE.Vector2(-250, 0),
+                new THREE.Vector2(-250, -10),
+                new THREE.Vector2(-220, -10),
+                new THREE.Vector2(-200, -25),
+                new THREE.Vector2(-200, -90),
+                new THREE.Vector2(-75, -90),
+                new THREE.Vector2(-75, -25),
+                new THREE.Vector2(-55, -10),
+                new THREE.Vector2(-25, -10),
+                new THREE.Vector2(-25, 0)
+            ],
+            hostPoints: [
+                [
+                    new THREE.Vector2(-185, -25),
+                    new THREE.Vector2(-145, -25),
+                    new THREE.Vector2(-145, -75),
+                    new THREE.Vector2(-185, -75)
+                ],
+                [
+                    new THREE.Vector2(-130, -25),
+                    new THREE.Vector2(-90, -25),
+                    new THREE.Vector2(-90, -75),
+                    new THREE.Vector2(-130, -75)
+                ]
+            ]
+        },
+            {
+                topPoint: [
+                    new THREE.Vector2(0, 0),
+                    new THREE.Vector2(0, -10),
+                    new THREE.Vector2(30, -10),
+                    new THREE.Vector2(50, -25),
+                    new THREE.Vector2(50, -90),
+                    new THREE.Vector2(175, -90),
+                    new THREE.Vector2(175, -25),
+                    new THREE.Vector2(195, -10),
+                    new THREE.Vector2(225, -10),
+                    new THREE.Vector2(225, 0)
+                ],
+                hostPoints: [
+                    [
+                        new THREE.Vector2(65, -25),
+                        new THREE.Vector2(105, -25),
+                        new THREE.Vector2(105, -75),
+                        new THREE.Vector2(65, -75)
+                    ],
+                    [
+                        new THREE.Vector2(120, -25),
+                        new THREE.Vector2(160, -25),
+                        new THREE.Vector2(160, -75),
+                        new THREE.Vector2(120, -75)
+                    ]
+                ]
+            }];
+
+
+        var holp = myd.DrawByTopPoints_Hols(holesPoints, 0, 0, -100);
+
+        holp.children[0].material.wireframe = true;
+
+        holp.children[1].geometry.faces[10].color = new THREE.Color(0xff0000);
+
+
+        var obj = new THREE.Object3D();
+        obj.add(holp);
+        // scene.add(obj);
+
+        // Create a sine-like wave
+        var curve = new THREE.SplineCurve([
+            new THREE.Vector2(0, 0),
+            new THREE.Vector2(10, 16),
+            new THREE.Vector2(20, 17)
+        ]);
+
+        var points = curve.getPoints(30);
+        console.log(points);
+        var geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+        var material = new THREE.LineBasicMaterial({color: 0xff0000});
+
+// Create the final object to add to the scene
+        var splineObject = new THREE.Line(geometry, material);
+        scene.add(splineObject);
+
+
+        //检查一串字符串里有没有12345678这个电话号码
+        var str = "dfd订单的g12345678h方法hkkl";
+        console.log(str.indexOf("12345678"));//当返回值！= -1的时候表示有这个号码
+
+
+        //获取当前号码双单
+        var a = 0;
+        var str = 2;
+        for (var i = 0; i < 5; i++) {
+            a += document.getElementById("last_result_no").getElementsByTagName("span")[i].innerText;
+        }
+        if (a % 2 == 0) {
+            str = 3;
+        } else {
+            str = 2;
+        }
+
+
+        document.getElementById("buymultiple").value = 5;
+
+
+        var idv = document.getElementById("betplay_data").getElementsByTagName("div");
+        for (var i = 0; i < idv.length; i++) {
+
+            if (idv[i].className == "num_btn") {
+                var allA = idv[i].getElementsByTagName("a");
+                for (var j = 0; j < allA.length ; j++) {
+                    if (j == str ){
+                        allA[j].click();
+                    }
+                }
+            }
+
+        }
+        document.getElementById("seleall").click();
+        document.getElementById("gamebuy").click();
+
+
+        var altstr;
+        for (var i = 0; i < 200; i++) {
+            altstr = "layui-layer" + i;
+            if (document.getElementById(altstr)!= undefined ){
+                var subts = document.getElementById(altstr).getElementsByTagName("div");
+                alert(subts.length);
+                for (var j = 0; j < subts.length; j++) {
+                    alert(subts[j].className);
+                    if (subts[j].className == "layui-layer-btn0" ) {
+                        subts[j].click();
+                    }
+                }
+            }
+        }
+
+
+
+
+
+    }
+</script>
+
+
+</body>
+</html>
