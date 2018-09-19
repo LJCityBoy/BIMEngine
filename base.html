@@ -119,27 +119,37 @@
      */
     function initObj() {
 
-        var box = new THREE.BoxGeometry(30,30,100,20,20,20);
-        var material = new THREE.MeshLambertMaterial({
-            color:0xd0d0d0,
-            side:THREE.DoubleSide,
-            wireframe:true
-        });
+        var shap = new THREE.Shape();
+        shap.moveTo(0,0);
+        shap.lineTo(10,0);
+        shap.lineTo(10,20);
+        shap.lineTo(0,20);
+        shap.lineTo(0,0);
 
+        var path = new THREE.SplineCurve3([
+            new THREE.Vector3(0,0,0),
+            new THREE.Vector3(40,0,0)
+        ]);
+        //拉伸参数
+        var extrudeSetting = {
+            bevelEnabled: false,//允许倒角？
+            steps: 10,
+            // amount:cuboid.height
+            extrudePath:path
 
-        var cuboid = {
-            "dd":12,
-            "dx":null,
-            "arcR":14
         };
-        if (cuboid.dx){
 
-            alert("dx");
-        } else if (cuboid.arcR){
-            alert("arcR");
-        } else {
-            alert("dd");
-        }
+        var geometry = new THREE.ExtrudeGeometry(shap, extrudeSetting);
+        var mesh = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial(
+            {
+                color: 0xd0d0d0,
+                side: THREE.DoubleSide,
+                wireframe: true,  //轮廓线
+
+            }));
+        mesh.rotateZ(Math.PI * 0);
+        scene.add(mesh);
+
 
     }
 

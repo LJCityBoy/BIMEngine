@@ -155,7 +155,8 @@
                 }
             ]});
 
-      // scene.add(obj);
+      //绘制长方体基础
+      scene.add(obj);
 
         /**
          * 功能：绘制圆柱体桩基
@@ -173,14 +174,14 @@
          * @param diameter 桩直径
          * @param height 高度
          */
-      var cyl1 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI * 0.25,190,-90,0,0,-90,30,200);
-      // scene.add(cyl1);
+      var cyl1 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI*0.25,190,-90,0,0,-90,30,200);
+      scene.add(cyl1);
       var cyl2 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI * 0.25,190,90,0,0,-90,30,200);
-      // scene.add(cyl2);
+      scene.add(cyl2);
       var cyl3 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI * 0.25,470,90,0,0,-90,30,200);
-      // scene.add(cyl3);
+      scene.add(cyl3);
       var cyl4 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI * 0.25,470,-90,0,0,-90,30,200);
-      // scene.add(cyl4);
+      scene.add(cyl4);
 
 
 
@@ -197,7 +198,7 @@
          * @param cap_parameter_list 长方体参数列表，采用json格式，可绘制组合体
          */
       //画哑铃承台
-      var obj3 = bimDray.draw_combine_cap(3,"name",0,0,0,Math.PI * 0.25,150,-90,{
+      var obj3 = bimDray.draw_combine_cap(3,"name",0,0,0,Math.PI * 0.25,150,0,{
           "cuboid":[
             {
                 "length":80,
@@ -219,9 +220,9 @@
               }
               ]
       });
-      // scene.add(obj3);
+      scene.add(obj3);
 
-        var obj4 = bimDray.draw_combine_cap(3,"name",0,0,0,Math.PI * 0.25,150,90,{
+        var obj4 = bimDray.draw_combine_cap(3,"name",0,0,0,Math.PI * 0.25,150,-180,{
             "cuboid":[
                 {
                     "length":80,
@@ -244,7 +245,7 @@
                 }
             ]
         });
-        // scene.add(obj4);
+        scene.add(obj4);
 
 
         //花瓶墩测试
@@ -308,40 +309,8 @@
                 "R":100
             }
         });
-        // scene.add(huaObj);
+        scene.add(huaObj);
 
-
-        /**
-         * 创建扫描网格模型
-         */
-        var shape = new THREE.Shape();
-        /**四条直线绘制一个矩形轮廓*/
-        shape.moveTo(0,0);//起点
-        shape.lineTo(0,10);//第2点
-        shape.lineTo(10,10);//第3点
-        shape.lineTo(10,0);//第4点
-        shape.lineTo(0,0);//第5点
-        /**创建轮廓的扫描轨迹(3D样条曲线)*/
-        var curves = new THREE.SplineCurve3([
-            new THREE.Vector3(0,0,0),
-            new THREE.Vector3(10,0,0),
-            new THREE.Vector3(20,0,0),
-            new THREE.Vector3(40,0,0),
-            new THREE.Vector3(50,10,0)
-        ]);
-        var geometry = new THREE.ExtrudeGeometry(//拉伸造型
-            shape,//二维轮廓
-            //拉伸参数
-            {
-                bevelEnabled:false,//无倒角
-                extrudePath:curves,//选择扫描轨迹
-                steps:20//扫描方向细分数
-            }
-        );
-        var material=new THREE.MeshPhongMaterial({color:0x0000ff,wireframe:false});//材质对象
-        var mesh=new THREE.Mesh(geometry,material);//扫描网格模型对象
-        mesh.name = "fff";
-        // scene.add(mesh);//扫描网格模型添加到场景中
 
 
 
@@ -389,7 +358,7 @@
     ]
         });
         // console.log(combination1);
-        // scene.add(combination1);
+        scene.add(combination1);
 
 
         /**
@@ -424,7 +393,7 @@
                 }
             ]
         });
-        // scene.add(cy);
+        scene.add(cy);
 
 
 
@@ -520,7 +489,7 @@
             "radius":60,
             "tube_radius":10,
             "start_angle":0,
-            "end_angle":Math.PI * 0.5
+            "end_angle":Math.PI * 2
         });
 
         scene.add(torus);
@@ -535,7 +504,7 @@
                     "sn":1,
                     "name":"XXX承台",
                     "distance":100,
-                    "angle":150,
+                    "angle":90,
                     "length":50,
                     "width":40,
                     "height":100,
@@ -547,23 +516,26 @@
         });
         scene.add(ddf);
 
-        var cubo = bimDray.draw_horizontal_cuboid_combine_entity(1,"name",0,0,0,0,{"cuboid":[
+        /**
+         * 横向长方体组合（水平方向）
+         */
+        var cubo = bimDray.draw_horizontal_cuboid_combine_entity(1,"name",0,0,0,Math.PI*0.5,-40,{"cuboid":[
             {
                 "sn":1,
-                "distance":10,
-                "angle":90,
+                "distance":100,
+                // "angle":90,
                 "length":50,
                 "width":30,
-                "height":10,
+                "height":30,
                 "dx":null,
-                "dy":null,
-                "arcR":null,
+                "dy":5,
+                "arcR":5,
                 "bottom_elevation":0
             },
                 {
                     "sn":1,
                     "distance":50,
-                    "angle":90,
+                    // "angle":90,
                     "length":70,
                     "width":20,
                     "height":10,
@@ -575,13 +547,13 @@
                 {
                     "sn":1,
                     "distance":70,
-                    "angle":90,
+                    // "angle":40,
                     "length":50,
                     "width":30,
-                    "height":10,
+                    "height":30,
                     "dx":null,
-                    "dy":null,
-                    "arcR":null,
+                    "dy":5,
+                    "arcR":5,
                     "bottom_elevation":0
                 }
             ]
@@ -597,7 +569,7 @@
                     "sn":1,
                     "name":"jjj",
                     "distance":100,
-                    "angle":90,
+                    "angle":0,
                     "length":60,
                     "width":50,
                     "height":30,
@@ -609,7 +581,7 @@
                     "sn":2,
                     "name":"jjj2",
                     "distance":90,
-                    "angle":90,
+                    "angle":0,
                     "length":50,
                     "width":40,
                     "height":30,
@@ -623,7 +595,7 @@
         });
         scene.add(gfgf);
 
-        // addEventListener('click',ray);// 监听窗口鼠标单击事件
+
 
     }
 

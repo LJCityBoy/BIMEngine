@@ -208,7 +208,7 @@ THREE.BIMEngine.prototype.draw_combine_cap = function (sn,name,
                                                        center_stake_N,center_stake_E,center_stake_H,
                                                        azimuth,distance,angle,cap_parameter_list) {
     //算方位角
-    var Az = get_azimuth(azimuth,angleToArc(angle));
+    var Az = get_azimuth(azimuth,angleToArc(angle+90));
     // console.log(Az);
     //算中心坐标
     var centerDistance = distance;
@@ -217,7 +217,7 @@ THREE.BIMEngine.prototype.draw_combine_cap = function (sn,name,
     for (var i = 0; i < cap_parameter_list.cuboid.length; i++) {
         var cap = cap_parameter_list.cuboid[i];
         //算中心坐标
-        points = get_coordinates(center_stake_N,center_stake_E,centerDistance + cap.length*0.5 ,Az);
+        points = get_coordinates(center_stake_N,center_stake_E,centerDistance + cap.length*0.5 ,Math.PI*0.5);
 
 
         centerDistance = centerDistance + cap.length;
@@ -232,9 +232,10 @@ THREE.BIMEngine.prototype.draw_combine_cap = function (sn,name,
         mesh.position.x = points[0];
         mesh.position.y = points[1];
         mesh.position.z = cap.bottom_elevation;
-        mesh.rotateZ(Az);
+        // mesh.rotateZ(Az);
         _3Dobj.add(mesh);
     }
+    _3Dobj.rotateZ(Az);
     return _3Dobj;
 
 };
@@ -1176,34 +1177,36 @@ THREE.BIMEngine.prototype.draw_horizontal_cuboid_combine_entity = function(sn,na
                                                                            center_stake_N,
                                                                            center_stake_E,
                                                                            center_stake_H,
-                                                                           azimuth,
+                                                                           azimuth,angle,
                                                                            entity_parameter_list){
     var cuboids = entity_parameter_list.cuboid;
     var _3Dobj = new THREE.Object3D();
     var lastDistance = 0;
+    var Az = get_azimuth(azimuth,angleToArc(angle+90));
+
     for (var i = 0; i < cuboids.length; i++) {
         var cuboid = cuboids[i];
+
         var shap = new THREE.Shape();
         //判断是否有倒角
         if (cuboid.dx&&cuboid.dy){
             //如果是直线倒角
             shap.moveTo(cuboid.dx,0);
-            shap.lineTo(cuboid.length - cuboid.dx,0);
-            shap.lineTo(cuboid.length,cuboid.dy);
-            shap.lineTo(cuboid.length,cuboid.width-cuboid.dy);
-            shap.lineTo(cuboid.length-cuboid.dx,cuboid.width);
+            shap.lineTo(cuboid.height - cuboid.dx,0);
+            shap.lineTo(cuboid.height,cuboid.dy);
+            shap.lineTo(cuboid.height,cuboid.width-cuboid.dy);
+            shap.lineTo(cuboid.height-cuboid.dx,cuboid.width);
             shap.lineTo(cuboid.dx,cuboid.width);
             shap.lineTo(0,cuboid.width-cuboid.dy);
             shap.lineTo(0,cuboid.dy);
-
             shap.lineTo(cuboid.dx,0);
         } else if (cuboid.arcR){
             // 如果是半径圆弧倒角
             shap.moveTo(cuboid.arcR,0);
-            shap.lineTo(cuboid.length - cuboid.arcR,0);
-            shap.quadraticCurveTo(cuboid.length,0,cuboid.length,cuboid.arcR);
-            shap.lineTo(cuboid.length,cuboid.width - cuboid.arcR);
-            shap.quadraticCurveTo(cuboid.length,cuboid.width,cuboid.length - cuboid.arcR,cuboid.width);
+            shap.lineTo(cuboid.height - cuboid.arcR,0);
+            shap.quadraticCurveTo(cuboid.height,0,cuboid.height,cuboid.arcR);
+            shap.lineTo(cuboid.height,cuboid.width - cuboid.arcR);
+            shap.quadraticCurveTo(cuboid.height,cuboid.width,cuboid.height - cuboid.arcR,cuboid.width);
             shap.lineTo(cuboid.arcR,cuboid.width);
             shap.quadraticCurveTo(0,cuboid.width,0,cuboid.width-cuboid.arcR);
             shap.lineTo(0,cuboid.arcR);
@@ -1211,28 +1214,28 @@ THREE.BIMEngine.prototype.draw_horizontal_cuboid_combine_entity = function(sn,na
         } else {
             //不倒角
             shap.moveTo(0,0);
-            shap.lineTo(cuboid.length,0);
-            shap.lineTo(cuboid.length,cuboid.width);
+            shap.lineTo(cuboid.height,0);
+            shap.lineTo(cuboid.height,cuboid.width);
             shap.lineTo(0,cuboid.width);
             shap.lineTo(0,0);
         }
 
-        lastDistance = lastDistance + cuboid.distance ;
+        lastDistance = lastDistance + cuboid.distance;
         //算方位角
-        var Az = get_azimuth(azimuth,angleToArc(cuboid.angle));
+
 
         //算中心坐标
-        var points = get_coordinates(center_stake_N,center_stake_E,lastDistance,Az);
+
+        var points = get_coordinates(center_stake_N,center_stake_E,lastDistance,Math.PI*0.5);
         var path = new THREE.SplineCurve3([
-            // new THREE.Vector3(0,0,0),
-            // new THREE.Vector3(0,0,cuboid.length),
+            new THREE.Vector3(0,-cuboid.width * 0.5,cuboid.height*0.5),
+            new THREE.Vector3(cuboid.length,-cuboid.width * 0.5,cuboid.height*0.5),
         ]);
         //拉伸参数
         var extrudeSetting = {
             bevelEnabled: false,//允许倒角？
-            steps: 10,
-            amount:cuboid.height
-            // extrudePath:path
+            steps: 2,
+            extrudePath:path
 
         };
         var mesh = getShapeMesh(shap,extrudeSetting,0xd0d0d0,true);
@@ -1240,12 +1243,13 @@ THREE.BIMEngine.prototype.draw_horizontal_cuboid_combine_entity = function(sn,na
         mesh.position.z = cuboid.bottom_elevation;
         mesh.position.x = points[0];
         mesh.position.y = points[1];
-        mesh.rotateZ(Az);
+        // mesh.rotateZ(Az);//不能每个都旋转
         mesh.name = name;
         mesh.sn = sn;
         _3Dobj.add(mesh);
         
     }
+    _3Dobj.rotateZ(Az);//整体旋转
     return _3Dobj;
 
 
