@@ -318,7 +318,7 @@ THREE.BIMEngine.prototype.draw_vase_pier = function (sn,name,
     var meshGeo = new THREE.MeshLambertMaterial({
         color:0xd0d0d0,
         side:THREE.DoubleSide,
-        wireframe:true
+        wireframe:false
     });
     for (var i = 0; i < cuboids.length; i++) {
         var box = new THREE.BoxGeometry(cuboids[i].length,cuboids[i].width,cuboids[i].height);
@@ -1004,7 +1004,7 @@ THREE.BIMEngine.prototype.draw_torus = function(sn,name,
 /**
  * 说明：本接口实现对文本的标注。
  功能：绘制文本
- 方法名称：draw_text(sn,text,center_stake_N,center_stake_E,center_stake_H,azimuth,distance,angle,bottom_elevation)
+ 方法名称：draw_text(sn,text,font_url,fontSize,textColor,center_stake_N,center_stake_E,center_stake_H,azimuth,distance,angle,bottom_elevation)
  参数说明：
  sn-图形编号
  text-文本
@@ -1024,6 +1024,7 @@ THREE.BIMEngine.prototype.draw_torus = function(sn,name,
  * @param text 文本
  * @param font_url 字体
  * @param fontSize 字体大小
+ * @param textColor 字体颜色
  * @param center_stake_N 中心桩号N坐标(X，数学坐标系对应Y方向)
  * @param center_stake_E 中心桩号E坐标(Y，数学坐标系对应X方向)
  * @param center_stake_H 中心桩号高程（即 Z坐标）
@@ -1032,8 +1033,7 @@ THREE.BIMEngine.prototype.draw_torus = function(sn,name,
  * @param angle 直线与切线方向夹角，左侧为负，右侧为正
  * @param bottom_elevation 底面中心点高程(Z值)
  */
-
-THREE.BIMEngine.prototype.draw_text = function(sn,text,font_url,fontSize,
+THREE.BIMEngine.prototype.draw_text = function(sn,text,font_url,fontSize,textColor,
                                                center_stake_N,
                                                center_stake_E,
                                                center_stake_H,
@@ -1041,23 +1041,47 @@ THREE.BIMEngine.prototype.draw_text = function(sn,text,font_url,fontSize,
                                                distance,
                                                angle,
                                                bottom_elevation) {
-    var textLoader = new THREE.FontLoader();
-    textLoader.load(font_url,function (fonts) {
-        fontFamily = fonts;
-    });
-    var options = {
-        size: fontSize,
-        height: 0,
-        font: fontFamily, // “引用js字体必须换成英文”
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelSegments: 1,
-        curveSegments: 50,
-        steps: 1
-    };
-    var textGeo = new THREE.TextGeometry(text, options);
-    var textMesh = new THREE.Mesh(textGeo, new THREE.MeshBasicMaterial());
+    //算方位角
+    var Az = get_azimuth(azimuth,angleToArc(angle));
 
+    //算中心坐标
+    var points = get_coordinates(center_stake_N,center_stake_E,distance,Az);
+    var _3Dobj = new THREE.Object3D();
+    var loader = new THREE.FontLoader();//新建字体对象
+    loader.load( font_url, function ( response ) {
+        var options = {
+            size: fontSize, //字号大小，一般为大写字母的高度
+            height: 2, //文字的厚度
+            weight: 'normal', //值为'normal'或'bold'，表示是否加粗
+            font: response, //字体，默认是'helvetiker'，需对应引用的字体文件
+            style: 'normal', //值为'normal'或'italics'，表示是否斜体
+            bevelThickness: 1, //倒角厚度
+            bevelSize: 1, //倒角宽度
+            curveSegments: 20,//弧线分段数，使得文字的曲线更加光滑
+            bevelEnabled: false, //布尔值，是否使用倒角，意为在边缘处斜切
+        };
+        ////创建一个三维对象的文本作为一个单一的对象 text输入的文字 options 文字设置
+        var textGeo = new THREE.TextGeometry( text, options);
+        textGeo.computeBoundingBox();
+        textGeo.computeVertexNormals();
+
+
+        var material = new THREE.MeshLambertMaterial({
+            color:textColor,
+            side:THREE.DoubleSide,
+            wireframe:false
+        });
+        //新建mesh,加入
+       var mesh = new THREE.Mesh( textGeo, material );
+        mesh.position.x = points[0];
+        mesh.position.y = points[1];
+        mesh.position.z = bottom_elevation;
+        mesh.rotateZ(Az);
+
+        _3Dobj.add(mesh);
+        return _3Dobj;
+    });
+    return _3Dobj;
 };
 
 /**
@@ -1412,6 +1436,167 @@ THREE.BIMEngine.prototype.draw_cylinder_entity = function(sn,name,
     return _3dObj;
 
 };
+/**
+ * 说明：本绘图接口实现圆台体的绘制，主要应用于锥坡的绘制。
+ 功能：绘制锥坡
+ 方法名称：draw_cone(sn,name,center_stake_N,center_stake_E,center_stake_H,azimuth,distance,angle,elevation, cone_parameter_list)
+ 参数说明：
+ sn-图形编号
+ name-名称
+ center_stake_N-中心桩号N坐标(X，数学坐标系对应Y方向)
+ center_stake_E-中心桩号E坐标(Y，数学坐标系对应X方向)
+ center_stake_H-中心桩号高程（即 Z坐标）
+ azimuth-中心桩号切线方位角
+ distance-道路中心桩到基础中心之间的距离
+ angle-直线与切线方向夹角，左侧为负，右侧为正
+ elevation-高程(Z值)
+ cone_parameter_list-锥坡参数列表
+ {
+     “top_horizontal_radius”:100 顶部椭圆长轴半径
+     “top_vertical_radius”:100顶部椭圆短轴半径
+     “bottom_horizontal_radius”:100 底部椭圆长轴半径
+     “bottom_vertical_radius”:100底部椭圆短轴半径
+     “height”:高度
+     “start_angle”:起始角度
+     “end_angle”:结束角度
+}
+
+ */
+
+/**
+ * 绘制锥坡
+ * @param sn 图形编号
+ * @param name 名称
+ * @param center_stake_N 中心桩号N坐标(X，数学坐标系对应Y方向)
+ * @param center_stake_E 中心桩号E坐标(Y，数学坐标系对应X方向)
+ * @param center_stake_H 中心桩号高程（即 Z坐标）
+ * @param segments 细分度
+ * @param azimuth 中心桩号切线方位角
+ * @param distance 道路中心桩到基础中心之间的距离
+ * @param angle 直线与切线方向夹角，左侧为负，右侧为正
+ * @param elevation 高程(Z值)
+ * @param cone_parameter_list 锥坡参数列表
+ */
+THREE.BIMEngine.prototype.draw_cone = function(sn,name,
+                                               center_stake_N,
+                                               center_stake_E,
+                                               center_stake_H,
+                                               segments,
+                                               azimuth,
+                                               distance,
+                                               angle,
+                                               elevation,
+                                               cone_parameter_list){
+    //算方位角
+    var Az = get_azimuth(azimuth,angleToArc(angle));
+
+    //算中心坐标
+    var points = get_coordinates(center_stake_N,center_stake_E,distance,Az);
+
+    var list = cone_parameter_list;
+
+    //椭圆1
+    var ellipse1 = new THREE.EllipseCurve(center_stake_N,center_stake_E,list.bottom_vertical_radius,list.bottom_horizontal_radius,list.start_angle,list.end_angle,false);
+    var ellipsePath1 = new THREE.CurvePath();
+    ellipsePath1.add(ellipse1);
+    var ellipseGeometry1 = ellipsePath1.createPointsGeometry(segments);
+
+    //椭圆2
+    var ellipse2 = new THREE.EllipseCurve(center_stake_N,center_stake_E,list.top_vertical_radius,list.top_vertical_radius,list.start_angle,list.end_angle ,false);
+    var ellipsePath2 = new THREE.CurvePath();
+    ellipsePath2.add(ellipse2);
+    var ellipseGeometry2 = ellipsePath2.createPointsGeometry(segments);
+
+    var vertices1 = ellipseGeometry1.vertices;
+    var vertices2 = ellipseGeometry2.vertices;
+    vertices2.forEach(function (item) {
+        item.z = list.height;
+    });
+    vertices2.push(new THREE.Vector3(center_stake_N,center_stake_E,list.height));
+    vertices1.push(new THREE.Vector3(0,0,0));
+    var topGeom = new THREE.Geometry();
+    var leftGeom = new THREE.Geometry();
+    var bottomGeom = new THREE.Geometry();
+
+    //顶面
+    for (var i = 0; i < vertices2.length; i++) {
+        var normal = new THREE.Vector3( 0, 0, 1 ); //三角面法向量
+        if (i != vertices2.length-1) {
+            topGeom.vertices.push(vertices2[i],vertices2[vertices2.length-i-1]);
+            var face0 = new THREE.Face3( i, i+1, i+2, normal); //创建三角面0
+            var face1 = new THREE.Face3( i, i+2, i+3, normal); //创建三角面1
+            topGeom.faces.push( face0 ); //三角面添加到几何体
+
+        }else if (i == vertices2.length-1){
+            topGeom.vertices.push(vertices2[i],vertices2[0]);
+            var face0 = new THREE.Face3( 0, 1, 2, normal); //创建三角面0
+            var face1 = new THREE.Face3( 0, 2, 3, normal); //创建三角面1
+            topGeom.faces.push( face0 ); //三角面添加到几何体
+        }
+
+    }
+    //底面
+    for (var i = 0; i < vertices1.length; i++) {
+        var normal = new THREE.Vector3( 0, 0, 1 ); //三角面法向量
+        if (i != vertices1.length-1) {
+            bottomGeom.vertices.push(vertices1[i],vertices1[vertices1.length-i-1]);
+            var face0 = new THREE.Face3( i, i+1, i+2, normal); //创建三角面0
+            // var face1 = new THREE.Face3( i, i+2, i+3, normal); //创建三角面1
+            bottomGeom.faces.push( face0 ); //三角面添加到几何体
+
+        }else if (i == vertices1.length-1){
+            bottomGeom.vertices.push(vertices1[i],vertices1[0]);
+            var face0 = new THREE.Face3( 0, 1, 2, normal); //创建三角面0
+            // var face1 = new THREE.Face3( 0, 2, 3, normal); //创建三角面1
+            bottomGeom.faces.push( face0 ); //三角面添加到几何体
+        }
+
+    }
+    //侧面
+
+
+    var vertices = [];
+    vertices = vertices.concat(vertices1,vertices2.reverse());
+    for (var i = 0; i < vertices.length; i++) {
+        var normal = new THREE.Vector3( 0, 0, 1 ); //三角面法向量
+        if (i != vertices.length-1) {
+            leftGeom.vertices.push(vertices[i],vertices[vertices.length-i-1]);
+            var face0 = new THREE.Face3( i, i+1, i+2, normal); //创建三角面0
+            // var face1 = new THREE.Face3( i, i+2, i+3, normal); //创建三角面1
+            leftGeom.faces.push( face0 ); //三角面添加到几何体
+
+        }else if (i == vertices.length-1){
+            leftGeom.vertices.push(vertices[i],vertices[0]);
+            var face0 = new THREE.Face3( 0, 1, 2, normal); //创建三角面0
+            // var face1 = new THREE.Face3( 0, 2, 3, normal); //创建三角面1
+            leftGeom.faces.push( face0 ); //三角面添加到几何体
+        }
+
+    }
+
+    var material=new THREE.MeshLambertMaterial({
+        color:0xd0d0d0,//三角面颜色
+        wireframe:false,
+        side:THREE.DoubleSide//两面可见
+    });//材质对象
+    var mesh1=new THREE.Mesh(topGeom,material);//网格模型对象
+    var mesh2=new THREE.Mesh(bottomGeom,material);//网格模型对象
+    var mesh3=new THREE.Mesh(leftGeom,material);//网格模型对象
+    var _3Dobj = new THREE.Object3D();
+    _3Dobj.add(mesh1,mesh2,mesh3);
+    _3Dobj.position.z = elevation ;
+    _3Dobj.position.x = points[0];
+    _3Dobj.position.y = points[1];
+    _3Dobj.rotateZ(Az);
+    // mesh.rotateX(Math.PI * 0.5);
+    _3Dobj.name = name;
+    _3Dobj.sn = sn;
+    return _3Dobj;
+
+
+};
+
+
 
 //构造器方法
 THREE.BIMEngine.prototype.constructor = THREE.BIMEngine;

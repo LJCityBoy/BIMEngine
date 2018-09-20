@@ -156,7 +156,7 @@
             ]});
 
       //绘制长方体基础
-      scene.add(obj);
+      // scene.add(obj);
 
         /**
          * 功能：绘制圆柱体桩基
@@ -175,13 +175,13 @@
          * @param height 高度
          */
       var cyl1 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI*0.25,190,-90,0,0,-90,30,200);
-      scene.add(cyl1);
+      // scene.add(cyl1);
       var cyl2 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI * 0.25,190,90,0,0,-90,30,200);
-      scene.add(cyl2);
+      // scene.add(cyl2);
       var cyl3 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI * 0.25,470,90,0,0,-90,30,200);
-      scene.add(cyl3);
+      // scene.add(cyl3);
       var cyl4 = bimDray.draw_cylinder_pile(2,"圆柱",0,0,0,Math.PI * 0.25,470,-90,0,0,-90,30,200);
-      scene.add(cyl4);
+      // scene.add(cyl4);
 
 
 
@@ -220,7 +220,7 @@
               }
               ]
       });
-      scene.add(obj3);
+      // scene.add(obj3);
 
         var obj4 = bimDray.draw_combine_cap(3,"name",0,0,0,Math.PI * 0.25,150,-180,{
             "cuboid":[
@@ -245,7 +245,7 @@
                 }
             ]
         });
-        scene.add(obj4);
+        // scene.add(obj4);
 
 
         //花瓶墩测试
@@ -309,7 +309,7 @@
                 "R":100
             }
         });
-        scene.add(huaObj);
+        // scene.add(huaObj);
 
 
 
@@ -358,7 +358,7 @@
     ]
         });
         // console.log(combination1);
-        scene.add(combination1);
+        // scene.add(combination1);
 
 
         /**
@@ -393,7 +393,7 @@
                 }
             ]
         });
-        scene.add(cy);
+        // scene.add(cy);
 
 
 
@@ -463,7 +463,7 @@
             ]
         });
 
-        scene.add(dd);
+        // scene.add(dd);
 
 
         /**
@@ -492,7 +492,7 @@
             "end_angle":Math.PI * 2
         });
 
-        scene.add(torus);
+        // scene.add(torus);
 
 
         /**
@@ -514,7 +514,7 @@
                     "bottom_elevation":60
                 }
         });
-        scene.add(ddf);
+        // scene.add(ddf);
 
         /**
          * 横向长方体组合（水平方向）
@@ -558,7 +558,7 @@
                 }
             ]
         });
-        scene.add(cubo);
+        // scene.add(cubo);
 
         /**
          * 3	纵向长方体组合（Z轴）
@@ -593,7 +593,25 @@
                 }
                 ]
         });
-        scene.add(gfgf);
+        // scene.add(gfgf);
+
+        /**
+         * 中文字体加载
+         */
+        var fonts = bimDray.draw_text(1,"床前明月光","libs/GB2312.json",20,0xff000f,0,0,0,0,200,0,-40);
+
+        // scene.add(fonts);
+
+        var dddd = bimDray.draw_cone(1,"33",0,0,0,20,0,100,90,50,{
+            "top_horizontal_radius":60,
+            "top_vertical_radius":40,
+            "bottom_horizontal_radius":100,
+            "bottom_vertical_radius":60,
+            "height":90,
+            "start_angle":0,
+            "end_angle":Math.PI * 2
+        });
+        scene.add(dddd);
 
 
 

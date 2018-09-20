@@ -119,36 +119,161 @@
      */
     function initObj() {
 
-        var shap = new THREE.Shape();
-        shap.moveTo(0,0);
-        shap.lineTo(10,0);
-        shap.lineTo(10,20);
-        shap.lineTo(0,20);
-        shap.lineTo(0,0);
 
-        var path = new THREE.SplineCurve3([
-            new THREE.Vector3(0,0,0),
-            new THREE.Vector3(40,0,0)
-        ]);
-        //拉伸参数
-        var extrudeSetting = {
-            bevelEnabled: false,//允许倒角？
-            steps: 10,
-            // amount:cuboid.height
-            extrudePath:path
 
-        };
+        // var _3Dobj = new THREE.Object3D();
+        // for (var i = 0; i < 30; i++) {
+        //     //椭圆
+        //     var ellipse = new THREE.EllipseCurve(0,0,30-10/30*i,60-15/30 * i,0,Math.PI *0.8,false);
+        //     var ellipsePath = new THREE.CurvePath();
+        //     ellipsePath.add(ellipse);
+        //     var ellipseGeometry = ellipsePath.createPointsGeometry(15);
+        //     ellipseGeometry.computeTangents();
+        //     ellipseGeometry.vertices.push(new THREE.Vector3(0,0,0));
+        //     // var  p = [new THREE.Vector3(0,0,0)];
+        //     // p.push(ellipseGeometry.vertices);
+        //     var shap = new THREE.Shape(ellipseGeometry.vertices);
+        //     var extr = new THREE.ExtrudeGeometry(shap,{
+        //         amount:2,
+        //         bevelEnabled:false,//无倒角
+        //         // extrudePath:el,//选择扫描轨迹
+        //         steps:10//扫描方向细分数
+        //
+        //     });
+        //
+        //     var geo = new THREE.MeshLambertMaterial({
+        //         color:0xd0d0d0,
+        //         side:THREE.DoubleSide,
+        //         wireframe:false
+        //     });
+        //
+        //     var mesh = new THREE.Mesh(extr,geo);
+        //     mesh.position.z = i;
+        //     _3Dobj.add(mesh);
+        // }
+        // scene.add(_3Dobj);
 
-        var geometry = new THREE.ExtrudeGeometry(shap, extrudeSetting);
-        var mesh = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial(
-            {
-                color: 0xd0d0d0,
-                side: THREE.DoubleSide,
-                wireframe: true,  //轮廓线
 
-            }));
-        mesh.rotateZ(Math.PI * 0);
+        /*
+        //椭圆
+        var ellipse = new THREE.EllipseCurve(0,0,10,30,0,Math.PI * 2,false);
+        var ellipsePath = new THREE.CurvePath();
+        ellipsePath.add(ellipse);
+        var ellipseGeometry = ellipsePath.createPointsGeometry(10);
+        ellipseGeometry.computeTangents();
+
+
+        var shap = new THREE.Shape(ellipseGeometry.vertices);
+
+
+        var extr = new THREE.ExtrudeGeometry(shap,{
+            amount:70,
+            bevelEnabled:false,//无倒角
+            // extrudePath:el,//选择扫描轨迹
+            steps:10//扫描方向细分数
+
+        });
+
+        var geo = new THREE.MeshLambertMaterial({
+            color:0xd0d0d0,
+            side:THREE.DoubleSide,
+            wireframe:true
+        });
+
+        var mesh = new THREE.Mesh(extr,geo);
         scene.add(mesh);
+        */
+
+
+        //椭圆1
+        var ellipse1 = new THREE.EllipseCurve(0,0,20,50,0,Math.PI *2,false);
+        var ellipsePath1 = new THREE.CurvePath();
+        ellipsePath1.add(ellipse1);
+        var ellipseGeometry1 = ellipsePath1.createPointsGeometry(20);
+
+        //椭圆2
+        var ellipse2 = new THREE.EllipseCurve(0,0,15,40,0,Math.PI *2 ,false);
+        var ellipsePath2 = new THREE.CurvePath();
+        ellipsePath2.add(ellipse2);
+        var ellipseGeometry2 = ellipsePath2.createPointsGeometry(20);
+
+        var vertices1 = ellipseGeometry1.vertices;
+        var vertices2 = ellipseGeometry2.vertices;
+        vertices2.forEach(function (item) {
+            item.z = 30;
+        });
+        vertices2.push(new THREE.Vector3(0,0,30));
+        vertices1.push(new THREE.Vector3(0,0,0));
+        var topGeom = new THREE.Geometry();
+        var leftGeom = new THREE.Geometry();
+        var bottomGeom = new THREE.Geometry();
+
+        //顶面
+        for (var i = 0; i < vertices2.length; i++) {
+            var normal = new THREE.Vector3( 0, 0, 1 ); //三角面法向量
+            if (i != vertices2.length-1) {
+                topGeom.vertices.push(vertices2[i],vertices2[vertices2.length-i-1]);
+                var face0 = new THREE.Face3( i, i+1, i+2, normal); //创建三角面0
+                var face1 = new THREE.Face3( i, i+2, i+3, normal); //创建三角面1
+                topGeom.faces.push( face0 ); //三角面添加到几何体
+
+            }else if (i == vertices2.length-1){
+                topGeom.vertices.push(vertices2[i],vertices2[0]);
+                var face0 = new THREE.Face3( 0, 1, 2, normal); //创建三角面0
+                var face1 = new THREE.Face3( 0, 2, 3, normal); //创建三角面1
+                topGeom.faces.push( face0 ); //三角面添加到几何体
+            }
+
+        }
+        //底面
+        for (var i = 0; i < vertices1.length; i++) {
+            var normal = new THREE.Vector3( 0, 0, 1 ); //三角面法向量
+            if (i != vertices1.length-1) {
+                bottomGeom.vertices.push(vertices1[i],vertices1[vertices1.length-i-1]);
+                var face0 = new THREE.Face3( i, i+1, i+2, normal); //创建三角面0
+                // var face1 = new THREE.Face3( i, i+2, i+3, normal); //创建三角面1
+                bottomGeom.faces.push( face0 ); //三角面添加到几何体
+
+            }else if (i == vertices1.length-1){
+                bottomGeom.vertices.push(vertices1[i],vertices1[0]);
+                var face0 = new THREE.Face3( 0, 1, 2, normal); //创建三角面0
+                // var face1 = new THREE.Face3( 0, 2, 3, normal); //创建三角面1
+                bottomGeom.faces.push( face0 ); //三角面添加到几何体
+            }
+
+        }
+        //侧面
+
+
+        var vertices = [];
+        vertices = vertices.concat(vertices1,vertices2.reverse());
+        for (var i = 0; i < vertices.length; i++) {
+            var normal = new THREE.Vector3( 0, 0, 1 ); //三角面法向量
+            if (i != vertices.length-1) {
+               leftGeom.vertices.push(vertices[i],vertices[vertices.length-i-1]);
+                var face0 = new THREE.Face3( i, i+1, i+2, normal); //创建三角面0
+                // var face1 = new THREE.Face3( i, i+2, i+3, normal); //创建三角面1
+                leftGeom.faces.push( face0 ); //三角面添加到几何体
+
+            }else if (i == vertices.length-1){
+                leftGeom.vertices.push(vertices[i],vertices[0]);
+                var face0 = new THREE.Face3( 0, 1, 2, normal); //创建三角面0
+                // var face1 = new THREE.Face3( 0, 2, 3, normal); //创建三角面1
+                leftGeom.faces.push( face0 ); //三角面添加到几何体
+            }
+
+        }
+
+        var material=new THREE.MeshLambertMaterial({
+            color:0x0000ff,//三角面颜色
+            wireframe:true,
+            side:THREE.DoubleSide//两面可见
+        });//材质对象
+        var mesh1=new THREE.Mesh(topGeom,material);//网格模型对象
+        var mesh2=new THREE.Mesh(bottomGeom,material);//网格模型对象
+        var mesh3=new THREE.Mesh(leftGeom,material);//网格模型对象
+        scene.add(mesh1,mesh2,mesh3);
+
 
 
     }
