@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- 满屏，禁止缩放 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>json数据测试</title>
+    <script type="text/javascript" src="libs/three.js"></script>
+    <script type="text/javascript" src="libs/OrbitControls.js"></script>
+    <script type="text/javascript" src="libs/Utility.js"></script>
+    <script type="text/javascript" src="libs/BIMEngine.js"></script>
+    <script type="text/javascript" src="libs/jquery-3.3.1.min.js"></script>
+    <style>
+        body{
+            margin: 0px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+
+<script>
+
+    //
+    var scene,renderer,camera,light,controls;
+    var auxiliary;//辅助坐标系
+
+    //程序入口
+    draw();
+
+    /**
+     * 初始化场景
+     */
+    function init() {
+        //scene 场景
+        scene = new THREE.Scene();
+        //相机
+        camera = new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,1,2000000*10);
+        camera.position.set(0,0,150);
+
+
+
+
+        //渲染器
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setClearColor(0xf6f6f6);//设置背景颜色
+        renderer.setSize(window.innerWidth,window.innerHeight);
+        document.body.appendChild(renderer.domElement);//加到控制器中
+
+        //添加光源
+        scene.add(new THREE.AmbientLight(0xffffff));
+
+        //添加平行光，平行光可以看做太阳光
+        light = new THREE.DirectionalLight(0xffffff);
+        light.position.set(1, 1, 1);
+        // scene.add(light);
+
+        //辅助坐标系
+        //轴辅助 （每一个轴的长度）
+        auxiliary = new THREE.AxesHelper(100);
+        // auxiliary.z = -100;
+        scene.add(auxiliary);
+    }
+
+    /**
+     * 鼠标控制
+     */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera);
+
+        // 如果使用animate方法时，将此函数删除
+        //controls.addEventListener( 'change', render );
+        // 使动画循环使用时阻尼或自转 意思是否有惯性
+        controls.enableDamping = true;
+        //动态阻尼系数 就是鼠标拖拽旋转灵敏度
+        controls.dampingFactor = 0.25;
+        //是否可以缩放
+        controls.enableZoom = true;
+        //是否自动旋转
+        controls.autoRotate = false;
+        //设置相机距离原点的最远距离
+        controls.minDistance = 20;
+        //设置相机距离原点的最远距离
+        controls.maxDistance = 20000000000;
+        //是否开启右键拖拽
+        controls.enablePan = true;
+        // controls.target = new THREE.Vector3(0,0,0);
+    }
+    /**
+     * 适应窗口变化
+     */
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /**
+     * 动画
+     */
+    function animate() {
+        //更新控制器
+        controls.update();
+        renderer.render(scene,camera);
+        requestAnimationFrame(animate);
+    }
+
+    //开始函数
+    function draw() {
+        init();//初始化
+        initObj();//画模型
+        initControls();//控制器初始化
+        animate();//动画
+        window.onresize = onWindowResize;//根据窗口变化
+    }
+
+
+    /**
+     * 画模型
+     */
+    function initObj() {
+        var bimDray = new THREE.BIMEngine();
+
+        //测试加载json文件
+        function testJson(url){
+            $.ajax({
+                type:"get",
+                url:url,
+                data:"",
+                jsonpCallback:"success_jsonpCallback",
+                success:function(json){
+                    analyticaData(json);
+
+                },
+                error:function(err){
+                    console.log("错误：",err);
+                   return false;
+                }
+            });
+        }
+
+
+
+        testJson("files/piles.json");
+        
+        function analyticaData(json) {
+           var obj =  parsingJson(json);
+           scene.add(obj);
+        }
+
+
+        /**
+         * 解析数据
+         */
+        function parsingJson(json){
+            // console.log(json.bridges);
+            //第一层bridges数组
+            for(var b in json.bridges){
+                var bridge = json.bridges[b];
+                // console.log(bridge.name);
+                //读第二层piers
+                for (var i = 0; i < bridge.piers.length; i++) {
+                    var pier = bridge.piers[i];
+                    // console.log(pier);
+                    //解析第三层
+                    var type = pier.piles.type;
+                    var cylinders = [];//桩基数据
+                    for (var j = 0; j < pier.piles.pile.length; j++) {
+                        var pile = pier.piles.pile[j];
+                        //判断是画什么类型的桩基
+                        if (pile.type == "cylinder"){//圆柱桩基
+                            //构造数据
+                            cylinders.push(pile);
+                        }
+                    }
+                    // console.log(cylinders);
+                    //画圆柱桩基
+                    if (cylinders.length>0){
+
+                       var psition = lonlatToThree(pier.center_stake_N,
+                           pier.center_stake_E,pier.center_stake_H);
+                       console.log(psition);
+                       var cylinder = bimDray.draw_cylinder_entity(pile.sn,pile.name,
+                            psition.x,
+                            psition.y,
+                            psition.z,
+                            pier.azimuth,
+                            {
+                                "cylinder": cylinders
+                            }
+                        );
+
+                        return cylinder;
+
+                    }else return false;
+
+                }
+            }
+        }
+
+
+
+        //由于实际坐标直接应用到three场景中会离远点太远，导致失真和看不见等情况，所以要对坐标进行转换
+
+
+
+        /**
+         * 转Three坐标
+         * @param lon
+         * @param lat
+         * @param height
+         * @returns {{x: number, y: number, z: number}}
+         */
+        function lonlatToThree(x,y,z){
+            var center = {
+                x: 2573598.222,
+                y: 484546.123,
+                z: 0
+            };
+            var result = {
+                x: x - center.x,
+                y: y - center.y,
+                z: z -center.z
+            };
+            return result;
+        }
+
+
+
+        /**
+         * 获取鼠标点坐标
+         * @param event
+         */
+        function onDocumentMouseDown( event ) {
+            event.preventDefault();
+            var vector = new THREE.Vector3();//三维坐标对象
+            vector.set(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1,
+                0.5);
+            vector.unproject(camera);
+            var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+            var intersects = raycaster.intersectObjects(scene.children);
+            if (intersects.length > 0) {
+                var selected = intersects[0];//取第一个物体
+                console.log("x坐标:" + selected.point.x);
+                console.log("y坐标:" + selected.point.y);
+                console.log("z坐标:" + selected.point.z);
+            }
+        }
+        window.addEventListener('mousedown',onDocumentMouseDown,false);
+
+    }
+
+
+</script>
+
+
+</body>
+</html>

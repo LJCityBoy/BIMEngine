@@ -91,7 +91,7 @@ function get_coordinates(N,E,distance,azimuth) {
     var e = E + distance*Math.sin(azimuth);
 
     //返回x,y坐标
-    return [e,n];
+    return [n,e];
 }
 
 

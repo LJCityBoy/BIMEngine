@@ -1069,7 +1069,8 @@ THREE.BIMEngine.prototype.draw_text = function(sn,text,font_url,fontSize,textCol
         var material = new THREE.MeshLambertMaterial({
             color:textColor,
             side:THREE.DoubleSide,
-            wireframe:false
+            wireframe:false,
+            needsUpdate:true
         });
         //新建mesh,加入
        var mesh = new THREE.Mesh( textGeo, material );
@@ -1206,7 +1207,7 @@ THREE.BIMEngine.prototype.draw_horizontal_cuboid_combine_entity = function(sn,na
     var cuboids = entity_parameter_list.cuboid;
     var _3Dobj = new THREE.Object3D();
     var lastDistance = 0;
-    var Az = get_azimuth(azimuth,angleToArc(angle+90));
+    var Az = get_azimuth(azimuth,angleToArc(angle));
 
     for (var i = 0; i < cuboids.length; i++) {
         var cuboid = cuboids[i];
@@ -1250,7 +1251,7 @@ THREE.BIMEngine.prototype.draw_horizontal_cuboid_combine_entity = function(sn,na
 
         //算中心坐标
 
-        var points = get_coordinates(center_stake_N,center_stake_E,lastDistance,Math.PI*0.5);
+        var points = get_coordinates(center_stake_N,center_stake_E,lastDistance,cuboid.angle);
         var path = new THREE.SplineCurve3([
             new THREE.Vector3(0,-cuboid.width * 0.5,cuboid.height*0.5),
             new THREE.Vector3(cuboid.length,-cuboid.width * 0.5,cuboid.height*0.5),
@@ -1408,12 +1409,20 @@ THREE.BIMEngine.prototype.draw_cylinder_entity = function(sn,name,
     var cylinder = entity_parameter_list.cylinder;
     var _3dObj = new THREE.Object3D();
     //方位角,//中心坐标
-    var Az,points;
+    var Az,points,dis = 0;
     for (var i = 0; i < cylinder.length; i++) {
         //算方位角
         Az = get_azimuth(azimuth,angleToArc(cylinder[i].angle));
+        dis += cylinder[i].distance;
         //算中心坐标
-        points = get_coordinates(center_stake_N,center_stake_E,cylinder[i].distance,Az);
+        points = get_coordinates(center_stake_N,center_stake_E,dis,Az);
+
+        if (cylinder[i].distance2!= undefined && cylinder[i].distance2>0 ) {//如果有第二个距离
+            dis += cylinder[i].distance2;
+            Az = get_azimuth(Az,angleToArc(cylinder[i].angle2));
+            points = get_coordinates(points[0],points[1],cylinder[i].distance2,Az);
+        }
+
         var cyl = new THREE.CylinderGeometry(cylinder[i].diameter * 0.5,cylinder[i].diameter * 0.5,cylinder[i].height,20);
         var meshGeo = new THREE.MeshPhongMaterial({
             color:new THREE.Color(Math.random()%255,Math.random()%255,Math.random()%255),
@@ -1496,58 +1505,54 @@ THREE.BIMEngine.prototype.draw_cone = function(sn,name,
     var list = cone_parameter_list;
 
     //椭圆1
-    var ellipse1 = new THREE.EllipseCurve(center_stake_N,center_stake_E,list.bottom_vertical_radius,list.bottom_horizontal_radius,list.start_angle,list.end_angle,false);
-    var ellipsePath1 = new THREE.CurvePath();
-    ellipsePath1.add(ellipse1);
-    var ellipseGeometry1 = ellipsePath1.createPointsGeometry(segments);
+    var bottomEllipse = new THREE.EllipseCurve(center_stake_N,center_stake_E,
+        list.bottom_vertical_radius,list.bottom_horizontal_radius,list.start_angle,list.end_angle,false);
+    var bottomEllipsePath = new THREE.CurvePath();
+    bottomEllipsePath.add(bottomEllipse);
+    var bottomVertices = bottomEllipsePath.createPointsGeometry(segments).vertices;
 
     //椭圆2
-    var ellipse2 = new THREE.EllipseCurve(center_stake_N,center_stake_E,list.top_vertical_radius,list.top_vertical_radius,list.start_angle,list.end_angle ,false);
-    var ellipsePath2 = new THREE.CurvePath();
-    ellipsePath2.add(ellipse2);
-    var ellipseGeometry2 = ellipsePath2.createPointsGeometry(segments);
+    var topEllipse = new THREE.EllipseCurve(center_stake_N,center_stake_E,
+        list.top_vertical_radius,list.top_horizontal_radius,list.start_angle,list.end_angle ,false);
+    var topEllipsePath = new THREE.CurvePath();
+    topEllipsePath.add(topEllipse);
+    var topVertices = topEllipsePath.createPointsGeometry(segments).vertices;
 
-    var vertices1 = ellipseGeometry1.vertices;
-    var vertices2 = ellipseGeometry2.vertices;
-    vertices2.forEach(function (item) {
+    // var bottomVertices = ellipseGeometry1.vertices;
+    // var topVertices = ellipseGeometry2.vertices;
+    topVertices.forEach(function (item) {
         item.z = list.height;
     });
-    vertices2.push(new THREE.Vector3(center_stake_N,center_stake_E,list.height));
-    vertices1.push(new THREE.Vector3(0,0,0));
+    topVertices.push(new THREE.Vector3(center_stake_N,center_stake_E,list.height));
+    bottomVertices.push(new THREE.Vector3(center_stake_N,center_stake_E,0));
     var topGeom = new THREE.Geometry();
     var leftGeom = new THREE.Geometry();
     var bottomGeom = new THREE.Geometry();
-
+    var normal = new THREE.Vector3( 0, 0, 1 );
     //顶面
-    for (var i = 0; i < vertices2.length; i++) {
-        var normal = new THREE.Vector3( 0, 0, 1 ); //三角面法向量
-        if (i != vertices2.length-1) {
-            topGeom.vertices.push(vertices2[i],vertices2[vertices2.length-i-1]);
+    for (var i = 0; i < topVertices.length; i++) {
+        if (i != topVertices.length-1) {
+            topGeom.vertices.push(topVertices[i],topVertices[topVertices.length-i-1]);
             var face0 = new THREE.Face3( i, i+1, i+2, normal); //创建三角面0
-            var face1 = new THREE.Face3( i, i+2, i+3, normal); //创建三角面1
             topGeom.faces.push( face0 ); //三角面添加到几何体
 
-        }else if (i == vertices2.length-1){
-            topGeom.vertices.push(vertices2[i],vertices2[0]);
+        }else if (i == topVertices.length-1){
+            topGeom.vertices.push(topVertices[i],topVertices[0]);
             var face0 = new THREE.Face3( 0, 1, 2, normal); //创建三角面0
-            var face1 = new THREE.Face3( 0, 2, 3, normal); //创建三角面1
             topGeom.faces.push( face0 ); //三角面添加到几何体
         }
 
     }
     //底面
-    for (var i = 0; i < vertices1.length; i++) {
-        var normal = new THREE.Vector3( 0, 0, 1 ); //三角面法向量
-        if (i != vertices1.length-1) {
-            bottomGeom.vertices.push(vertices1[i],vertices1[vertices1.length-i-1]);
+    for (var i = 0; i < bottomVertices.length; i++) {
+        if (i != bottomVertices.length-1) {
+            bottomGeom.vertices.push(bottomVertices[i],bottomVertices[bottomVertices.length-i-1]);
             var face0 = new THREE.Face3( i, i+1, i+2, normal); //创建三角面0
-            // var face1 = new THREE.Face3( i, i+2, i+3, normal); //创建三角面1
             bottomGeom.faces.push( face0 ); //三角面添加到几何体
 
-        }else if (i == vertices1.length-1){
-            bottomGeom.vertices.push(vertices1[i],vertices1[0]);
+        }else if (i == bottomVertices.length-1){
+            bottomGeom.vertices.push(bottomVertices[i],bottomVertices[0]);
             var face0 = new THREE.Face3( 0, 1, 2, normal); //创建三角面0
-            // var face1 = new THREE.Face3( 0, 2, 3, normal); //创建三角面1
             bottomGeom.faces.push( face0 ); //三角面添加到几何体
         }
 
@@ -1556,43 +1561,40 @@ THREE.BIMEngine.prototype.draw_cone = function(sn,name,
 
 
     var vertices = [];
-    vertices = vertices.concat(vertices1,vertices2.reverse());
+    vertices = vertices.concat(bottomVertices,topVertices.reverse());
     for (var i = 0; i < vertices.length; i++) {
-        var normal = new THREE.Vector3( 0, 0, 1 ); //三角面法向量
         if (i != vertices.length-1) {
             leftGeom.vertices.push(vertices[i],vertices[vertices.length-i-1]);
             var face0 = new THREE.Face3( i, i+1, i+2, normal); //创建三角面0
-            // var face1 = new THREE.Face3( i, i+2, i+3, normal); //创建三角面1
             leftGeom.faces.push( face0 ); //三角面添加到几何体
 
         }else if (i == vertices.length-1){
             leftGeom.vertices.push(vertices[i],vertices[0]);
-            var face0 = new THREE.Face3( 0, 1, 2, normal); //创建三角面0
-            // var face1 = new THREE.Face3( 0, 2, 3, normal); //创建三角面1
-            leftGeom.faces.push( face0 ); //三角面添加到几何体
+            var face0 = new THREE.Face3( 0, 1, 2, normal);
+            leftGeom.faces.push( face0 );
         }
 
     }
 
     var material=new THREE.MeshLambertMaterial({
-        color:0xd0d0d0,//三角面颜色
-        wireframe:false,
-        side:THREE.DoubleSide//两面可见
+        color:0xd0d0d0,
+        wireframe:true,
+        side:THREE.DoubleSide,
+        needsUpdate:true
     });//材质对象
-    var mesh1=new THREE.Mesh(topGeom,material);//网格模型对象
-    var mesh2=new THREE.Mesh(bottomGeom,material);//网格模型对象
-    var mesh3=new THREE.Mesh(leftGeom,material);//网格模型对象
+    var mesh1=new THREE.Mesh(topGeom,material);
+    var mesh2=new THREE.Mesh(bottomGeom,material);
+    var mesh3=new THREE.Mesh(leftGeom,material);
     var _3Dobj = new THREE.Object3D();
     _3Dobj.add(mesh1,mesh2,mesh3);
     _3Dobj.position.z = elevation ;
     _3Dobj.position.x = points[0];
     _3Dobj.position.y = points[1];
     _3Dobj.rotateZ(Az);
-    // mesh.rotateX(Math.PI * 0.5);
     _3Dobj.name = name;
     _3Dobj.sn = sn;
-    return _3Dobj;
 
+    return _3Dobj;
 
 };
 

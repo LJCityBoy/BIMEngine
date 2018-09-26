@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>webgl</title>
+</head>
+<body>
+<canvas id="webgl" width="500" height="500" style="background-color: blue"></canvas>
+<script>
+    var canvas = document.getElementById("webgl");
+    var gl = canvas.getContext('webgl');
+
+    //顶点着色器
+    var vertexShaderSource = '' + 'void main(){' +
+        'gl_PointSize = 60.0;' + 'gl_Position = vec4(0.5,0.5,0.5,1.0);' + '}';
+
+    //设置颜色
+    var fragShaderSource = '' + 'void main(){' + 'gl_FragColor = vec4(0.0,1.0,0.0,1.0);' + '}';
+
+    var program = initShader(gl,vertexShaderSource,fragShaderSource);
+
+    //开始绘制
+    gl.drawArrays(gl.POINTS,0,1);
+
+
+    function initShader(gl,vertexShaderSource,fragmentShaderSource) {
+
+        var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+
+        var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(vertexShader,vertexShaderSource);
+        gl.shaderSource(fragmentShader,fragmentShaderSource);
+
+        gl.compileShader(vertexShader);
+        gl.compileShader(fragmentShader);
+
+        var program = gl.createProgram();
+        gl.attachShader(program,vertexShader);
+        gl.attachShader(program,fragmentShader);
+
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        return program;
+
+    }
+
+
+</script>
+
+
+</body>
+</html>

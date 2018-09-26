@@ -1,0 +1,65 @@
+
+{
+	"bridges":[{
+		"name":"北江大桥",
+		"start_stake":"K0+000",
+		"end_stake":"K1+000",
+		"center_stake":"K0+500",
+		"piers":[{
+			"name":"1#",
+			"type":"桥墩",
+			"center_stake":"K0+550",			
+			"center_stake_N":2573598.222,
+			"center_stake_E":484546.123,
+			"center_stake_H":28.091,
+			"azimuth":0,
+			"piles": {
+				"layer": "桩基",
+				"pile":[
+				{
+					"type": "cylinder",
+					"sn": "A1",
+					"name": "A1",
+					"distance": 12.85,
+					"angle": 0,
+					"distance2": 0,
+					"angle2": 0,
+					"diameter": 1.6,
+					"height": 36,
+					"bottom_elevation": -23.4
+				},
+				{
+					"type": "cylinder",
+					"sn": "B1",
+					"name": "B1",
+					"distance": 3.9,
+					"angle": -90,
+					"diameter": 1.6,
+					"height": 36,
+					"bottom_elevation": -23.4
+				},
+				{
+					"type": "cylinder",
+					"sn": "C1",
+					"name": "C1",
+					"distance": 3.9,
+					"angle": -90,
+					"diameter": 1.6,
+					"height": 36,
+					"bottom_elevation": -23.4
+				},
+				{
+					"type": "cylinder",
+					"sn": "D1",
+					"name": "D1",
+					"distance": 12.85,
+					"angle": -90,
+					"diameter": 1.6,
+					"height": 36,
+					"bottom_elevation": -23.4
+				}
+			]
+			}
+		}]
+	}]
+}
