@@ -162,7 +162,7 @@ function setExtrudeSetting(H) {
         amount: parseFloat(H),
         // depth:parseFloat(H),
         bevelEnabled: false,//允许倒角？
-        bevelSegments: 100,
+        bevelSegments: 10,
         steps: 1,
         bevelSize: 1,//倒角宽度
         bevelThickness: 1//倒角厚度

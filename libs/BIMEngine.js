@@ -832,17 +832,19 @@ THREE.BIMEngine.prototype.draw_section_entity = function(sn,name,
                        }
                    }
                }
+
                shape.holes.push(holsPath);
            }
        }
 
-        var mesh = getShapeMesh(shape,setExtrudeSetting(20),0xd0d0d0,false);
+        var mesh = getShapeMesh(shape,setExtrudeSetting(8),0xd0d0d0,false);
         Az = get_azimuth(azimuth,angleToArc(sections[i].angle));
         points = get_coordinates(center_stake_N,center_stake_E,sections[i].distance,azimuth);
         mesh.position.z = center_stake_H;
         mesh.position.x = points[0];
         mesh.position.y = points[1];
         mesh.rotateZ(Az);
+        mesh.rotateX(Math.PI*0.5);
         _3Dobj.add(mesh);
 
     }
@@ -1141,34 +1143,34 @@ THREE.BIMEngine.prototype.draw_single_cuboid_entity = function(sn,name,
     //判断是否有倒角
     if (cuboid.dx&&cuboid.dy){
         //如果是直线倒角
-        shap.moveTo(cuboid.dx,0);
-        shap.lineTo(cuboid.length - cuboid.dx,0);
-        shap.lineTo(cuboid.length,cuboid.dy);
-        shap.lineTo(cuboid.length,cuboid.width-cuboid.dy);
-        shap.lineTo(cuboid.length-cuboid.dx,cuboid.width);
-        shap.lineTo(cuboid.dx,cuboid.width);
-        shap.lineTo(0,cuboid.width-cuboid.dy);
-        shap.lineTo(0,cuboid.dy);
-
-        shap.lineTo(cuboid.dx,0);
+        shap.moveTo(-cuboid.length*0.5,-cuboid.width*0.5+cuboid.dy);
+        shap.lineTo(-cuboid.length*0.5+cuboid.dx,-cuboid.width*0.5);
+        shap.lineTo(cuboid.length*0.5-cuboid.dx,-cuboid.width*0.5);
+        shap.lineTo(cuboid.length*0.5,-cuboid.width*0.5+cuboid.dy);
+        shap.lineTo(cuboid.length*0.5,cuboid.width*0.5-cuboid.dy);
+        shap.lineTo(cuboid.length*0.5-cuboid.dx,cuboid.width*0.5);
+        shap.lineTo(-cuboid.length*0.5+cuboid.dx,cuboid.width*0.5);
+        shap.lineTo(-cuboid.length*0.5,cuboid.width*0.5-cuboid.dy);
+        shap.lineTo(-cuboid.length*0.5,-cuboid.width*0.5+cuboid.dy);
     } else if (cuboid.arcR){
         // 如果是半径圆弧倒角
-        shap.moveTo(cuboid.arcR,0);
-        shap.lineTo(cuboid.length - cuboid.arcR,0);
-        shap.quadraticCurveTo(cuboid.length,0,cuboid.length,cuboid.arcR);
-        shap.lineTo(cuboid.length,cuboid.width - cuboid.arcR);
-        shap.quadraticCurveTo(cuboid.length,cuboid.width,cuboid.length - cuboid.arcR,cuboid.width);
-        shap.lineTo(cuboid.arcR,cuboid.width);
-        shap.quadraticCurveTo(0,cuboid.width,0,cuboid.width-cuboid.arcR);
-        shap.lineTo(0,cuboid.arcR);
-        shap.quadraticCurveTo(0,0,cuboid.arcR,0);
+        shap.moveTo(-cuboid.length*0.5,-cuboid.width*0.5+cuboid.arcR);
+        shap.quadraticCurveTo(-cuboid.length*0.5,-cuboid.width*0.5,-cuboid.length*0.5+cuboid.arcR,-cuboid.width*0.5);
+        shap.lineTo(cuboid.length*0.5 - cuboid.arcR,-cuboid.width*0.5);
+        shap.quadraticCurveTo(cuboid.length*0.5,-cuboid.width*0.5,cuboid.length*0.5,-cuboid.width*0.5+cuboid.arcR);
+        shap.lineTo(cuboid.length*0.5,cuboid.width*0.5 - cuboid.arcR);
+        shap.quadraticCurveTo(cuboid.length*0.5,cuboid.width*0.5,cuboid.length*0.5 -cuboid.arcR,cuboid.width*0.5);
+        shap.lineTo(-cuboid.length*0.5+cuboid.arcR,cuboid.width*0.5);
+        shap.quadraticCurveTo(-cuboid.length*0.5,cuboid.width*0.5,-cuboid.length*0.5,cuboid.width*0.5-cuboid.arcR);
+        shap.lineTo(-cuboid.length*0.5,-cuboid.width*0.5+cuboid.arcR);
+
     } else {
         //不倒角
-        shap.moveTo(0,0);
-        shap.lineTo(cuboid.length,0);
-        shap.lineTo(cuboid.length,cuboid.width);
-        shap.lineTo(0,cuboid.width);
-        shap.lineTo(0,0);
+        shap.moveTo(-cuboid.length*0.5,-cuboid.width*0.5);
+        shap.lineTo(cuboid.length*0.5,-cuboid.width*0.5);
+        shap.lineTo(cuboid.length*0.5,cuboid.width*0.5);
+        shap.lineTo(-cuboid.length*0.5,cuboid.width*0.5);
+        shap.lineTo(-cuboid.length*0.5,-cuboid.width*0.5);
     }
 
     var mesh = getShapeMesh(shap,setExtrudeSetting(cuboid.height),0xd0d0d0,false);
@@ -1413,12 +1415,12 @@ THREE.BIMEngine.prototype.draw_cylinder_entity = function(sn,name,
     for (var i = 0; i < cylinder.length; i++) {
         //算方位角
         Az = get_azimuth(azimuth,angleToArc(cylinder[i].angle));
-        dis += cylinder[i].distance;
+        // dis += cylinder[i].distance;
         //算中心坐标
-        points = get_coordinates(center_stake_N,center_stake_E,dis,Az);
+        points = get_coordinates(center_stake_N,center_stake_E,cylinder[i].distance,Az);
 
         if (cylinder[i].distance2!= undefined && cylinder[i].distance2>0 ) {//如果有第二个距离
-            dis += cylinder[i].distance2;
+            // dis += cylinder[i].distance2;
             Az = get_azimuth(Az,angleToArc(cylinder[i].angle2));
             points = get_coordinates(points[0],points[1],cylinder[i].distance2,Az);
         }

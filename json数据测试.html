@@ -158,14 +158,18 @@
          */
         function parsingJson(json){
             // console.log(json.bridges);
+            var _3Dobj = new THREE.Object3D();
             //第一层bridges数组
             for(var b in json.bridges){
                 var bridge = json.bridges[b];
                 // console.log(bridge.name);
+
+
                 //读第二层piers
                 for (var i = 0; i < bridge.piers.length; i++) {
                     var pier = bridge.piers[i];
-                    // console.log(pier);
+                    var psition = lonlatToThree(pier.center_stake_N,
+                        pier.center_stake_E,pier.center_stake_H);
                     //解析第三层
                     var type = pier.piles.type;
                     var cylinders = [];//桩基数据
@@ -177,14 +181,54 @@
                             cylinders.push(pile);
                         }
                     }
-                    // console.log(cylinders);
+
+
+                    //解析长方体承台数据
+                    var cuboids = [];//承台数据
+                    for (var j = 0; j < pier.caps.cap.length; j++) {
+                        var cap = pier.caps.cap[j];
+                        if (cap.type == "cuboid"){
+                            //单个画长方体承台
+                            var cuboid = bimDray.draw_single_cuboid_entity(pile.sn,pile.name,
+                                psition.x,psition.y,psition.z,pier.azimuth,{
+                                    "cuboid":cap
+                                }
+                            );
+                            _3Dobj.add(cuboid);
+                        }
+                    }
+
+                    for (var j = 0; j < pier.columns.column.length; j++) {
+                        var column = pier.columns.column[j];
+                        //判断是画什么类型的桩基
+                        if (column.type == "cylinder"){//圆柱桩基
+                            //构造数据
+                            cylinders.push(column);
+                        }
+                    }
+                    
+                    //截面形式
+                    var sect = [];
+                    for (var j = 0; j < pier.sections.section.length; j++) {
+                        var section = pier.sections.section[j];
+                        if (section.type == "section") {
+                            sect.push(section);
+                        }
+                    }
+
+                    console.log(sect.length);
+                    if (sect.length>0){
+                        var sectionObj = bimDray.draw_section_entity(pile.sn,pile.name,
+                            psition.x,psition.y,psition.z,pier.azimuth,{
+                            "sections":sect
+                        });
+                        _3Dobj.add(sectionObj);
+                    }
+
                     //画圆柱桩基
                     if (cylinders.length>0){
-
-                       var psition = lonlatToThree(pier.center_stake_N,
-                           pier.center_stake_E,pier.center_stake_H);
-                       console.log(psition);
-                       var cylinder = bimDray.draw_cylinder_entity(pile.sn,pile.name,
+                        // console.log(psition);
+                        var cylinder = bimDray.draw_cylinder_entity(pile.sn,pile.name,
                             psition.x,
                             psition.y,
                             psition.z,
@@ -193,13 +237,15 @@
                                 "cylinder": cylinders
                             }
                         );
+                        _3Dobj.add(cylinder);
 
-                        return cylinder;
-
-                    }else return false;
+                    }
 
                 }
+
+
             }
+            return _3Dobj;
         }
 
 

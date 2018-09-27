@@ -8,7 +8,7 @@
 		"piers":[{
 			"name":"1#",
 			"type":"桥墩",
-			"center_stake":"K0+550",			
+			"center_stake":"K0+550",
 			"center_stake_N":2573598.222,
 			"center_stake_E":484546.123,
 			"center_stake_H":28.091,
@@ -21,7 +21,7 @@
 					"sn": "A1",
 					"name": "A1",
 					"distance": 12.85,
-					"angle": 0,
+					"angle": -90,
 					"distance2": 0,
 					"angle2": 0,
 					"diameter": 1.6,
@@ -43,7 +43,7 @@
 					"sn": "C1",
 					"name": "C1",
 					"distance": 3.9,
-					"angle": -90,
+					"angle": 90,
 					"diameter": 1.6,
 					"height": 36,
 					"bottom_elevation": -23.4
@@ -53,12 +53,120 @@
 					"sn": "D1",
 					"name": "D1",
 					"distance": 12.85,
-					"angle": -90,
+					"angle": 90,
 					"diameter": 1.6,
 					"height": 36,
 					"bottom_elevation": -23.4
 				}
 			]
+			},
+			"caps":{
+				"layer": "承台",
+				"cap":[
+					{
+						"type": "cuboid",
+						"sn": 100,
+						"name": "承台1",
+						"distance": 8.375,
+						"angle": 90,
+						"length": 12,
+						"width": 6,
+						"height": 4,
+						"dx": 0.5,
+						"dy":0.5,
+						"arcR":0,
+						"bottom_elevation": 12.6
+					},
+					{
+						"type": "cuboid",
+						"sn": 101,
+						"name": "承台2",
+						"distance": 8.375,
+						"angle": -90,
+						"length": 12,
+						"width": 6,
+						"height": 4,
+						"dx": 0.5,
+						"dy":0.5,
+						"arcR":0,
+						"bottom_elevation": 12.6
+					}
+				]
+			},
+			"columns":{
+				"layer": "柱",
+				"column":[
+					{
+						"type": "cylinder",
+						"sn": "A1",
+						"name": "A1",
+						"distance": 12.85,
+						"angle": -90,
+						"distance2": 0,
+						"angle2": 0,
+						"diameter": 1.6,
+						"height": 36,
+						"bottom_elevation": 16.6
+					},{
+						"type": "cylinder",
+						"sn": "A1",
+						"name": "A1",
+						"distance": 3.9,
+						"angle": -90,
+						"diameter": 1.6,
+						"height": 36,
+						"bottom_elevation": 16.6
+					},{
+						"type": "cylinder",
+						"sn": "A1",
+						"name": "A1",
+						"distance": 12.85,
+						"angle": 90,
+						"diameter": 1.6,
+						"height": 36,
+						"bottom_elevation": 16.6
+					},{
+						"type": "cylinder",
+						"sn": "A1",
+						"name": "A1",
+						"distance": 3.9,
+						"angle": 90,
+						"diameter": 1.6,
+						"height": 36,
+						"bottom_elevation": 16.6
+					}
+				]
+			},
+			"sections":{
+				"layer":"截面",
+				"section":[{
+					"type":"section",
+					"sn":1,
+					"distance":3.9,
+					"angle":0,
+					"out_section_parameter":[
+						["line",0,0],
+						["line","0:1",0.5],
+						["line","-1:0",-1.5],
+						["line","0:1",36.5],
+						["line","1:0",1.5],
+						["line","0:1",0.5],
+						["line","-1:0",-4],
+						["line","0:-1",-37.5],
+						["line","1:0",4]
+					],
+					"innersections":[
+						{
+							"inner_section_parameter": [
+								["line",4,-2],
+								["line","0:1",29.5],
+								["line","-1:0",-1],
+								["line","0:-1",-29.5],
+								["line","1:0",1]
+							]
+						}
+					]
+				}]
 			}
 		}]
 	}]
